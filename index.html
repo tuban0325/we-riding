@@ -224,7 +224,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v0.96</div>
+    <div class="version-info-inline">v0.97</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -587,7 +587,7 @@ window.deleteRoom=async function(roomId,fromInside=false){
   if(!confirm('라이딩을 나갈까요?')) return;
   if(!S.fbConn||!window._fb) return;
   try{
-    const {ref,remove}=window._fb;
+    const {ref,remove,set}=window._fb;
     // 방장인지 확인 (로컬에서)
     const isOwner=S.room?.ownerId===S.user?.id;
     const members=S.room?.members||{};
@@ -596,8 +596,8 @@ window.deleteRoom=async function(roomId,fromInside=false){
     if(isOwner&&otherMembers.length>0){
       // 방장이 나가는데 다른 팀원이 있으면 새 방장 지정
       const newOwnerId=otherMembers[0];
-      await window._fb.set(ref(db,`rooms/${roomId}/ownerId`),newOwnerId);
-      toast('👑 새로운 방장이 지정됐어요');
+      await set(ref(db,`rooms/${roomId}/ownerId`),newOwnerId);
+      console.log('새 방장 지정:',newOwnerId);
     } else if(isOwner&&otherMembers.length===0){
       // 마지막 사람(방장)이 나가면 방 삭제
       await remove(ref(db,`rooms/${roomId}`));
@@ -807,28 +807,29 @@ window.leaveRoom=async function(forced=false){
   
   if(!forced&&S.fbConn&&S.room&&window._fb){
     try{
-      const {ref,get}=window._fb;
-      // Firebase에서 최신 members 데이터 직접 읽기
-      const snap=await get(ref(db,`rooms/${S.room.id}/members`));
-      const members=snap.val()||{};
+      const {ref,remove,set}=window._fb;
+      // 현재 로컬 데이터에서 다른 팀원 확인
+      const members=S.room?.members||{};
       const otherMembers=Object.keys(members).filter(uid=>uid!==S.user.id);
       
-      if(S.isOwner&&otherMembers.length>0){
-        // 방장이 나가는데 다른 팀원이 있으면 → 새 방장 지정 (절대 방 삭제 안 함!)
+      // 현재 사용자가 방장인지 확인
+      const isOwner=S.room?.ownerId===S.user.id;
+      
+      if(isOwner&&otherMembers.length>0){
+        // 방장이 나가는데 다른 팀원이 있으면 → 새 방장 지정
         const newOwnerId=otherMembers[0];
-        await window._fb.set(ref(db,`rooms/${S.room.id}/ownerId`),newOwnerId);
-        toast('👑 새로운 방장이 지정됐어요');
-      } else if(S.isOwner&&otherMembers.length===0){
+        await set(ref(db,`rooms/${S.room.id}/ownerId`),newOwnerId);
+        console.log('새 방장 지정:',newOwnerId);
+      } else if(isOwner&&otherMembers.length===0){
         // 마지막 사람(방장)이 나가면만 방 삭제
-        await window._fb.remove(ref(db,`rooms/${S.room.id}`));
-        S.roomCreated=false;
-        save('roomCreated',false);
+        await remove(ref(db,`rooms/${S.room.id}`));
       }
       
       // 자신을 멤버에서 제거 (방 자체는 유지!)
-      await window._fb.remove(ref(db,`rooms/${S.room.id}/members/${S.user.id}`));
+      await remove(ref(db,`rooms/${S.room.id}/members/${S.user.id}`));
     }catch(e){
       console.error('leaveRoom error:',e);
+      toast('⚠️ 저장 오류');
     }
   }
   
