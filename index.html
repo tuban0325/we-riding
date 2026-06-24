@@ -217,7 +217,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     </div>
     <div class="nhint">최대 8자 · 지도에 표시돼요</div>
   </div>
-  <div class="version-info">v0.9</div>
+  <div class="version-info">v0.92</div>
 </div>
 
 <!-- ══ Firebase ID 설정 ══ -->
@@ -413,7 +413,6 @@ window.initFirebaseWithId=async function(){
 };
 
 // ── 로그인
-window.loginKakao=function(){showNS('카카오 사용자');};
 window.showNS=function(pre=''){$('ls1').style.display='none';$('ls2').style.display='block';if(pre)$('ni').value=pre;$('ni').focus();};
 $('ni').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
 window.doLogin=function(){
