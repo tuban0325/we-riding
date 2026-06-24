@@ -150,7 +150,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:0;left:0;right:0;z-index:1001;background:rgba(26,26,24,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px 20px 0 0;padding:10px 16px 32px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column}
+.mp{position:absolute;bottom:0;left:0;right:0;z-index:1001;background:rgba(26,26,24,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px 20px 0 0;padding:10px 16px 32px;max-height:85vh;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column}
 .mph{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 12px;flex-shrink:0}
 .mpt{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-shrink:0}
 .sort-hint{font-size:10px;color:var(--g700);font-weight:400;letter-spacing:0}
@@ -773,7 +773,31 @@ window.shareKakao=function(){
   if(navigator.share)navigator.share({title:'WE 라이딩',url:link});else window.copyLink();
   window.closeSS();
 };
-window.doLogout=function(){if(confirm('로그아웃 하시겠어요?')){localStorage.removeItem('WE_user');S.user=null;$('ls1').style.display='block';$('ls2').style.display='none';screen('sl');}};
+window.doLogout=async function(){
+  if(!confirm('로그아웃 하시겠어요?')) return;
+  
+  // 자신이 방장인 방 삭제
+  if(S.fbConn&&db&&window._fb&&S.user){
+    try{
+      const {ref,get,remove}=window._fb;
+      const rooms=await new Promise(resolve=>{
+        window._fb.onValue(ref(db,'rooms'),snap=>resolve(snap.val()||{}),{onlyOnce:true});
+      });
+      const myRooms=Object.entries(rooms).filter(([,r])=>r.ownerId===S.user.id);
+      for(const [roomId] of myRooms){
+        await remove(ref(db,`rooms/${roomId}`));
+      }
+    }catch(e){}
+  }
+  
+  localStorage.removeItem('pcc_user');
+  localStorage.removeItem('pcc_fbProjectId');
+  localStorage.removeItem('pcc_roomCreated');
+  S.user=null;
+  $('ls1').style.display='block';
+  $('ls2').style.display='none';
+  screen('sl');
+};
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 </script>
