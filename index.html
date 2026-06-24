@@ -176,8 +176,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 /* 통계 */
 .mstats{position:absolute;bottom:12px;right:12px;z-index:1000;pointer-events:none;width:220px}
 .srow{display:flex;gap:8px}
-.sc{flex:1;background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;padding:10px 12px;text-align:center}
-.sv{font-size:22px;font-weight:700;color:#fff;line-height:1;margin-bottom:2px}
+.sc{flex:1;background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:10px;padding:7px 8px;text-align:center}
+.sv{font-size:18px;font-weight:700;color:#fff;line-height:1;margin-bottom:1px}
 .su{font-size:10px;color:var(--g300);font-weight:500}
 
 /* 지도 버튼 */
@@ -195,21 +195,22 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:100px;left:12px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;width:190px;max-height:220px;overflow:hidden;display:flex;flex-direction:column}
-.mph{display:none}
-.mpt{font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;flex-shrink:0}
+.mp{position:absolute;bottom:100px;left:12px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;width:180px;max-height:260px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s}
+.mp.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
+.mpt{font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;flex-shrink:0}
 .sort-hint{display:none}
-.mlist{display:flex;flex-direction:column;gap:3px;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
-.mi{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.mph{display:none}
+.mlist{display:flex;flex-direction:column;gap:2px;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;max-height:220px}
+.mi{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}
 .mi:last-child{border-bottom:none}
-.rank{width:14px;font-size:11px;font-weight:700;color:var(--g500);text-align:center;flex-shrink:0}
-.mav{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
-.crown{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:9px;line-height:1}
+.rank{width:13px;font-size:10px;font-weight:700;color:var(--g500);text-align:center;flex-shrink:0}
+.mav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.crown{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:8px;line-height:1}
 .md{flex:1;min-width:0;overflow:hidden}
 .mnrow{display:flex;align-items:center;gap:3px;margin-bottom:1px}
-.mn{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72px}
-.mybadge{font-size:9px;background:var(--orange);color:#fff;padding:1px 3px;border-radius:3px;font-weight:700;flex-shrink:0}
-.mspd{font-size:10px;color:var(--g500)}
+.mn{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px}
+.mybadge{font-size:8px;background:var(--orange);color:#fff;padding:1px 3px;border-radius:3px;font-weight:700;flex-shrink:0}
+.mspd{font-size:9px;color:var(--g500)}
 .mspd span{color:var(--g300)}
 .mgap{flex-shrink:0;text-align:right}
 .bb{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;display:block;margin-bottom:1px}
@@ -252,7 +253,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.03</div>
+    <div class="version-info-inline">v1.04</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -315,7 +316,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-back" onclick="leaveRoom()">←</button>
       <div class="rnm" id="rnm">라이딩</div>
       <button class="btn-gpx-hud" id="btn-gpx-hud" onclick="openGpxModal()" title="GPX 코스 등록">🗺️</button>
-      <button class="btn-members" id="btn-members" onclick="showMemberModal()">👥 <span id="mbadge">1명</span></button>
+      <button class="btn-members" id="btn-members" onclick="toggleMemberPanel()">👥 <span id="mbadge">1명</span></button>
       <button class="btn-sh" onclick="openSS()">🔗</button>
     </div>
   </div>
@@ -355,9 +356,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     <button class="btn-dis" onclick="dismissAlert('ab-gpxdev','gpxdev')">확인</button>
   </div>
 
-  <div class="mp">
-    <div class="mph"></div>
-    <div class="mpt">팀원 현황 <span class="sort-hint">· 속도 빠른 순</span></div>
+  <div class="mp" id="mp-panel">
+    <div class="mpt">팀원 현황</div>
     <div class="mlist" id="mlist"></div>
   </div>
 </div>
@@ -1080,24 +1080,15 @@ window.shareKakao=function(){
   if(navigator.share)navigator.share({title:'WE 라이딩',url:link});else window.copyLink();
   window.closeSS();
 };
-window.showMemberModal=function(){
-  const overlay=$('mm-overlay');
-  const list=$('mm-list');
-  const members=S.room?.members||{};
-  if(!Object.keys(members).length){toast('팀원이 없어요');return;}
-  const sorted=Object.entries(members).sort(([,a],[,b])=>(b.speed||0)-(a.speed||0));
-  list.innerHTML=sorted.map(([uid,m])=>{
-    const isMe=uid===S.user.id;
-    return`<div class="mm-item">
-      <div class="mm-av" style="background:${m.color||'#888'}">${(m.name||'?')[0]}</div>
-      <div class="mm-info">
-        <div class="mm-name">${m.name}${S.room?.ownerId===uid?' 👑':''}${isMe?' (나)':''}</div>
-        <div class="mm-spd">속도 ${(m.speed||0).toFixed(1)} km/h</div>
-      </div>
-    </div>`;
-  }).join('');
-  overlay.classList.add('show');
+// 팀원 패널 토글 (접기/펼치기)
+window.toggleMemberPanel=function(){
+  const panel=$('mp-panel');
+  const btn=$('btn-members');
+  const hidden=panel.classList.toggle('hidden');
+  btn.style.opacity=hidden?'.5':'1';
 };
+// 팀원 모달은 더 이상 사용 안 함 (패널로 통합)
+window.showMemberModal=function(){window.toggleMemberPanel();};
 window.closeMemberModal=function(){
   $('mm-overlay').classList.remove('show');
 };
