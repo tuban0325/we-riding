@@ -117,6 +117,21 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .rnm{flex:1;font-size:14px;font-weight:700;color:#fff;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mbadge{background:var(--orange);color:#fff;font-size:12px;font-weight:700;padding:4px 9px;border-radius:20px;flex-shrink:0}
 .btn-sh{background:rgba(255,255,255,.12);border:none;border-radius:8px;color:#fff;font-size:16px;padding:6px 10px;cursor:pointer;flex-shrink:0}
+.btn-members{background:rgba(255,255,255,.12);border:none;border-radius:8px;color:#fff;font-size:13px;padding:6px 10px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+
+/* 팀원 모달 */
+.mm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:2000;display:none;align-items:flex-end;justify-content:center}
+.mm-overlay.show{display:flex}
+.mm-modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;max-width:500px}
+.mm-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #eee}
+.mm-title{font-size:16px;font-weight:700;color:#333}
+.mm-close{background:none;border:none;font-size:24px;cursor:pointer;color:#666}
+.mm-list{overflow-y:auto;flex:1;padding:12px}
+.mm-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;background:#f8f8f8;margin-bottom:8px}
+.mm-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.mm-info{flex:1;min-width:0}
+.mm-name{font-size:14px;font-weight:600;color:#333;margin-bottom:2px}
+.mm-spd{font-size:12px;color:#888}
 .btn-end{background:rgba(231,76,60,.75);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;flex-shrink:0;white-space:nowrap;display:none}
 
 /* 선두 정보 카드 */
@@ -209,7 +224,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v0.95</div>
+    <div class="version-info-inline">v0.96</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -286,7 +301,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     <div class="hud-inner">
       <button class="btn-back" onclick="leaveRoom()">←</button>
       <div class="rnm" id="rnm">라이딩</div>
-      <div class="mbadge" id="mbadge">1명</div>
+      <button class="btn-members" id="btn-members" onclick="showMemberModal()">👥 <span id="mbadge">1</span>명</button>
       <button class="btn-sh" onclick="openSS()">🔗</button>
       <button class="btn-end" id="btn-end" onclick="endRoom()">🏁 종료</button>
     </div>
@@ -342,10 +357,21 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   </div>
 </div>
 
+<!-- ══ 팀원 목록 모달 ══ -->
+<div class="mm-overlay" id="mm-overlay" onclick="if(event.target===this)closeMemberModal()">
+  <div class="mm-modal">
+    <div class="mm-header">
+      <div class="mm-title">팀원 목록</div>
+      <button class="mm-close" onclick="closeMemberModal()">✕</button>
+    </div>
+    <div class="mm-list" id="mm-list"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
-let db = null, roomListener = null;
+let db = null, roomListener = null, roomsListener = null;
 
 async function initFb(projectId) {
   try {
@@ -477,8 +503,13 @@ function renderHome(){
 
 function watchRooms(){
   if(!db||!window._fb) return;
+  // 기존 리스너 정리
+  if(roomsListener){roomsListener();roomsListener=null;}
   const {ref,onValue}=window._fb;
-  onValue(ref(db,'rooms'),snap=>renderRooms(snap.val()||{}));
+  // 새 리스너 등록 - 변경될 때마다 즉시 렌더링
+  roomsListener=onValue(ref(db,'rooms'),snap=>{
+    renderRooms(snap.val()||{});
+  });
 }
 
 function renderRooms(rooms){
@@ -551,34 +582,29 @@ window.createRoom=async function(){
   joinRoom(id);
 };
 
-// ── 방 삭제
+// ── 방 나가기
 window.deleteRoom=async function(roomId,fromInside=false){
-  if(!confirm('라이딩을 나갈까요?\n다른 팀원은 계속 라이딩할 수 있습니다.')) return;
+  if(!confirm('라이딩을 나갈까요?')) return;
   if(!S.fbConn||!window._fb) return;
   try{
-    const {ref,set,get}=window._fb;
-    // 최신 members 데이터 읽기
-    const snap=await get(ref(db,`rooms/${roomId}/members`));
-    const members=snap.val()||{};
+    const {ref,remove}=window._fb;
+    // 방장인지 확인 (로컬에서)
+    const isOwner=S.room?.ownerId===S.user?.id;
+    const members=S.room?.members||{};
     const otherMembers=Object.keys(members).filter(uid=>uid!==S.user.id);
-    
-    // 현재 사용자가 방장인지 확인
-    const roomSnap=await get(ref(db,`rooms/${roomId}`));
-    const roomData=roomSnap.val()||{};
-    const isOwner=roomData.ownerId===S.user.id;
     
     if(isOwner&&otherMembers.length>0){
       // 방장이 나가는데 다른 팀원이 있으면 새 방장 지정
       const newOwnerId=otherMembers[0];
-      await set(ref(db,`rooms/${roomId}/ownerId`),newOwnerId);
+      await window._fb.set(ref(db,`rooms/${roomId}/ownerId`),newOwnerId);
       toast('👑 새로운 방장이 지정됐어요');
     } else if(isOwner&&otherMembers.length===0){
       // 마지막 사람(방장)이 나가면 방 삭제
-      await window._fb.remove(ref(db,`rooms/${roomId}`));
+      await remove(ref(db,`rooms/${roomId}`));
     }
     
     // 자신을 제거 (방 자체는 유지)
-    await window._fb.remove(ref(db,`rooms/${roomId}/members/${S.user.id}`));
+    await remove(ref(db,`rooms/${roomId}/members/${S.user.id}`));
     toast('방에서 나갔어요');
     
     if(fromInside) leaveRoom(true);
@@ -828,6 +854,27 @@ window.shareKakao=function(){
   const link=$('slink').textContent;
   if(navigator.share)navigator.share({title:'WE 라이딩',url:link});else window.copyLink();
   window.closeSS();
+};
+window.showMemberModal=function(){
+  const overlay=$('mm-overlay');
+  const list=$('mm-list');
+  const members=S.room?.members||{};
+  if(!Object.keys(members).length){toast('팀원이 없어요');return;}
+  const sorted=Object.entries(members).sort(([,a],[,b])=>(b.speed||0)-(a.speed||0));
+  list.innerHTML=sorted.map(([uid,m])=>{
+    const isMe=uid===S.user.id;
+    return`<div class="mm-item">
+      <div class="mm-av" style="background:${m.color||'#888'}">${(m.name||'?')[0]}</div>
+      <div class="mm-info">
+        <div class="mm-name">${m.name}${S.room?.ownerId===uid?' 👑':''}${isMe?' (나)':''}</div>
+        <div class="mm-spd">속도 ${(m.speed||0).toFixed(1)} km/h</div>
+      </div>
+    </div>`;
+  }).join('');
+  overlay.classList.add('show');
+};
+window.closeMemberModal=function(){
+  $('mm-overlay').classList.remove('show');
 };
 window.doLogout=async function(){
   if(!confirm('로그아웃 하시겠어요?')) return;
