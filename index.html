@@ -175,15 +175,15 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .lc-title .lc-leader-name{display:inline;font-size:11px;color:var(--orange);font-weight:700;letter-spacing:0;text-transform:none}
 
 /* 통계 */
-.mstats{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 66px);z-index:1004;pointer-events:none;transition:opacity .25s,transform .25s;width:48px}
+.mstats{position:absolute;right:60px;bottom:calc(env(safe-area-inset-bottom, 0px) + 100px);z-index:1004;pointer-events:none;transition:opacity .25s,transform .25s}
 .mstats.hidden{opacity:0;pointer-events:none;transform:translateY(10px)}
-.srow{display:flex;flex-direction:column;gap:6px}
-.sc{background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:10px;padding:6px 4px;text-align:center;width:48px}
-.sv{font-size:13px;font-weight:700;color:#fff;line-height:1;margin-bottom:1px}
-.su{font-size:9px;color:var(--g300);font-weight:500}
+.srow{display:flex;flex-direction:row;gap:6px}
+.sc{background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:10px;padding:7px 10px;text-align:center}
+.sv{font-size:16px;font-weight:700;color:#fff;line-height:1;margin-bottom:2px}
+.su{font-size:10px;color:var(--g300);font-weight:500}
 
 /* 지도 버튼 */
-.mctrl{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);z-index:1002;display:flex;flex-direction:column;gap:8px}
+.mctrl{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 100px);z-index:1002;display:flex;flex-direction:column;gap:8px}
 .mbtn{width:40px;height:40px;border-radius:10px;background:rgba(26,26,24,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mbtn:active{background:rgba(255,107,53,.6)}
 .mbtn-tm{height:52px;flex-direction:column;gap:0;background:rgba(26,26,24,.95)}
@@ -201,7 +201,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 90px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:220px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s}
+.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 100px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:220px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s}
 .mp.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
 .mpt{font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;flex-shrink:0}
 .sort-hint{display:none}
@@ -259,7 +259,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.12</div>
+    <div class="version-info-inline">v1.14</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -339,22 +339,18 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     </div>
   </div>
 
-  <!-- 속도/거리 (⚡ 토글) -->
+  <!-- 속도계 (⚡ 토글, 버튼 왼쪽에 가로 표시) -->
   <div class="mstats hidden" id="mstats-panel">
     <div class="srow">
       <div class="sc"><div class="sv" id="s-spd">0.0</div><div class="su">km/h</div></div>
       <div class="sc"><div class="sv" id="s-dst">0.00</div><div class="su">km</div></div>
+      <div class="sc"><div class="sv" id="s-tm">00:00</div><div class="su">경과</div></div>
     </div>
   </div>
   <div class="mctrl">
     <button class="mbtn" onclick="centerMe()">📍</button>
     <button class="mbtn" onclick="fitAll()">👥</button>
-    <button class="mbtn mbtn-tm" id="btn-stats-tog" onclick="toggleStats()" title="속도계">
-      <div>
-        <div class="tm-val" id="s-tm">00:00</div>
-        <div class="tm-lbl">⚡</div>
-      </div>
-    </button>
+    <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계">⚡</button>
   </div>
 
   <div class="abar warn" id="ab-behind">
@@ -1100,6 +1096,16 @@ window.toggleStats=function(){
   const btn=$('btn-stats-tog');
   const hidden=panel.classList.toggle('hidden');
   btn.style.opacity=hidden?'.5':'1';
+  if(!hidden){
+    // 10초 후 자동 숨김
+    clearTimeout(window._statsTmr);
+    window._statsTmr=setTimeout(()=>{
+      panel.classList.add('hidden');
+      btn.style.opacity='.5';
+    },10000);
+  } else {
+    clearTimeout(window._statsTmr);
+  }
 };
 // 팀원 모달은 더 이상 사용 안 함 (패널로 통합)
 window.showMemberModal=function(){window.toggleMemberPanel();};
