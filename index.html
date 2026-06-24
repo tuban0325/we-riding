@@ -32,15 +32,13 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .sub{font-size:13px;color:var(--g300);margin-bottom:32px;text-align:center}
 .lcard{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:20px;padding:24px 20px;width:100%;max-width:360px}
 .lcard-t{font-size:12px;font-weight:600;color:var(--g300);text-align:center;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
-.btn-kk{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;background:#FEE500;color:#191600;font-family:var(--font);font-size:15px;font-weight:700;border:none;border-radius:12px;cursor:pointer;margin-bottom:10px}
-.btn-kk:active{transform:scale(.97)}.btn-kk svg{width:20px;height:20px;flex-shrink:0}
 .btn-guest{display:flex;align-items:center;justify-content:center;width:100%;padding:13px;background:transparent;color:var(--g300);font-family:var(--font);font-size:14px;font-weight:500;border:1px solid rgba(255,255,255,.15);border-radius:12px;cursor:pointer}
 
 .nw{width:100%;max-width:360px;margin-top:16px}
 .nw label{display:block;font-size:13px;color:var(--g300);margin-bottom:8px;font-weight:500}
 
 /* 버전 정보 */
-.version-info{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);font-weight:500;letter-spacing:.5px}
+.version-info{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.8px}
 .nrow{display:flex;gap:8px;width:100%}
 .ni{flex:1 1 0;min-width:0;padding:13px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-family:var(--font);font-size:15px;outline:none}
 .ni::placeholder{color:var(--g500)}.ni:focus{border-color:var(--orange)}
@@ -564,10 +562,21 @@ window.createRoom=async function(){
 // ── 방 삭제
 window.deleteRoom=async function(roomId,fromInside=false){
   if(!confirm('라이딩을 종료할까요?\n모든 팀원이 자동으로 홈으로 이동합니다.')) return;
-  const {ref,set}=window._fb;
-  await set(ref(db,`rooms/${roomId}/closed`),true);
-  toast('🏁 라이딩이 종료됐어요');
-  if(fromInside) leaveRoom(true);
+  if(!S.fbConn||!window._fb) return;
+  try{
+    const {ref,remove}=window._fb;
+    // 방 완전 삭제
+    await remove(ref(db,`rooms/${roomId}`));
+    // roomCreated 초기화 (이 방을 만든 사람)
+    S.roomCreated=false;
+    save('roomCreated',false);
+    toast('🏁 라이딩이 종료되고 방이 삭제됐어요');
+    if(fromInside) leaveRoom(true);
+    else renderHome(); // 홈 화면 갱신
+  }catch(e){
+    console.error('deleteRoom error:',e);
+    toast('⚠️ 방 삭제 중 오류가 발생했어요');
+  }
 };
 window.endRoom=function(){if(S.room) window.deleteRoom(S.room.id,true);};
 
