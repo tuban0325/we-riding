@@ -224,7 +224,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v0.97</div>
+    <div class="version-info-inline">v0.98</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -303,7 +303,6 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <div class="rnm" id="rnm">라이딩</div>
       <button class="btn-members" id="btn-members" onclick="showMemberModal()">👥 <span id="mbadge">1</span>명</button>
       <button class="btn-sh" onclick="openSS()">🔗</button>
-      <button class="btn-end" id="btn-end" onclick="endRoom()">🏁 종료</button>
     </div>
   </div>
 
@@ -376,7 +375,7 @@ let db = null, roomListener = null, roomsListener = null;
 async function initFb(projectId) {
   try {
     const {initializeApp,getApps,getApp} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const {getDatabase,ref,set,onValue,remove} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    const {getDatabase,ref,set,onValue,remove,update} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
     
     const FB_CONFIG = {
       apiKey: "AIzaSyCMG8XfoKA2xhKvAfvU769Hg8IzE6wYOgI",
@@ -391,7 +390,7 @@ async function initFb(projectId) {
 
     const app = getApps().length ? getApp() : initializeApp(FB_CONFIG);
     db = getDatabase(app);
-    window._fb = {ref,set,onValue,remove};
+    window._fb = {ref,set,onValue,remove,update};
     return true;
   } catch(e) { console.error('Firebase init error:',e); return false; }
 }
@@ -587,31 +586,38 @@ window.deleteRoom=async function(roomId,fromInside=false){
   if(!confirm('라이딩을 나갈까요?')) return;
   if(!S.fbConn||!window._fb) return;
   try{
-    const {ref,remove,set}=window._fb;
-    // 방장인지 확인 (로컬에서)
+    const {ref,remove,set,update}=window._fb;
     const isOwner=S.room?.ownerId===S.user?.id;
     const members=S.room?.members||{};
     const otherMembers=Object.keys(members).filter(uid=>uid!==S.user.id);
     
+    console.log('deleteRoom: isOwner=',isOwner,'otherMembers=',otherMembers.length);
+    
     if(isOwner&&otherMembers.length>0){
-      // 방장이 나가는데 다른 팀원이 있으면 새 방장 지정
+      // 방장이 나가는데 다른 팀원이 있으면 새 방장 지정 + 자신 제거를 원자적으로 처리
       const newOwnerId=otherMembers[0];
-      await set(ref(db,`rooms/${roomId}/ownerId`),newOwnerId);
-      console.log('새 방장 지정:',newOwnerId);
+      const updates={};
+      updates[`rooms/${roomId}/ownerId`]=newOwnerId;
+      updates[`rooms/${roomId}/members/${S.user.id}`]=null; // remove
+      await update(ref(db),updates);
+      console.log('✅ 새 방장 지정 & 자신 제거:',newOwnerId);
+      toast('👑 새 방장이 지정됐어요');
     } else if(isOwner&&otherMembers.length===0){
       // 마지막 사람(방장)이 나가면 방 삭제
       await remove(ref(db,`rooms/${roomId}`));
+      console.log('✅ 방 삭제됨');
+    } else {
+      // 방장이 아닌 사람이 나갈 때
+      await remove(ref(db,`rooms/${roomId}/members/${S.user.id}`));
+      console.log('✅ 멤버만 제거됨');
     }
     
-    // 자신을 제거 (방 자체는 유지)
-    await remove(ref(db,`rooms/${roomId}/members/${S.user.id}`));
     toast('방에서 나갔어요');
-    
     if(fromInside) leaveRoom(true);
     else renderHome();
   }catch(e){
-    console.error('deleteRoom error:',e);
-    toast('⚠️ 오류가 발생했어요');
+    console.error('❌ deleteRoom error:',e);
+    toast('⚠️ 오류: '+e.message);
   }
 };
 window.endRoom=function(){if(S.room) window.deleteRoom(S.room.id,true);};
@@ -671,8 +677,6 @@ function startSync(roomId){
     }
     prevOwnerId=data.ownerId;
     
-    $('btn-end').style.display=S.isOwner?'block':'none';
-
     Object.entries(members).forEach(([uid,m])=>{
       if(uid===S.user.id||!m.lat||!m.lng) return;
       if(!S.mkrs[uid]){
@@ -807,36 +811,38 @@ window.leaveRoom=async function(forced=false){
   
   if(!forced&&S.fbConn&&S.room&&window._fb){
     try{
-      const {ref,remove,set}=window._fb;
-      // 현재 로컬 데이터에서 다른 팀원 확인
+      const {ref,remove,update}=window._fb;
+      const isOwner=S.room?.ownerId===S.user.id;
       const members=S.room?.members||{};
       const otherMembers=Object.keys(members).filter(uid=>uid!==S.user.id);
       
-      // 현재 사용자가 방장인지 확인
-      const isOwner=S.room?.ownerId===S.user.id;
+      console.log('leaveRoom: isOwner=',isOwner,'otherMembers=',otherMembers.length);
       
       if(isOwner&&otherMembers.length>0){
-        // 방장이 나가는데 다른 팀원이 있으면 → 새 방장 지정
+        // 방장이 나가는데 다른 팀원이 있으면 새 방장 지정 + 자신 제거를 원자적으로
         const newOwnerId=otherMembers[0];
-        await set(ref(db,`rooms/${S.room.id}/ownerId`),newOwnerId);
-        console.log('새 방장 지정:',newOwnerId);
+        const updates={};
+        updates[`rooms/${S.room.id}/ownerId`]=newOwnerId;
+        updates[`rooms/${S.room.id}/members/${S.user.id}`]=null;
+        await update(ref(db),updates);
+        console.log('✅ leaveRoom: 새 방장 지정 & 자신 제거:',newOwnerId);
       } else if(isOwner&&otherMembers.length===0){
-        // 마지막 사람(방장)이 나가면만 방 삭제
+        // 마지막 사람(방장)이 나가면 방 삭제
         await remove(ref(db,`rooms/${S.room.id}`));
+        console.log('✅ leaveRoom: 방 삭제됨');
+      } else {
+        // 방장이 아닌 사람이 나갈 때만 멤버에서 제거
+        await remove(ref(db,`rooms/${S.room.id}/members/${S.user.id}`));
+        console.log('✅ leaveRoom: 멤버만 제거됨');
       }
-      
-      // 자신을 멤버에서 제거 (방 자체는 유지!)
-      await remove(ref(db,`rooms/${S.room.id}/members/${S.user.id}`));
     }catch(e){
-      console.error('leaveRoom error:',e);
-      toast('⚠️ 저장 오류');
+      console.error('❌ leaveRoom error:',e);
     }
   }
   
   if(roomListener){roomListener();roomListener=null;}
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
-  $('btn-end').style.display='none';
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
   S.room=null;S.isOwner=false;
