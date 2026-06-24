@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#FF6B35">
-<title>we riding</title>
+<title>WE 라이딩</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -139,11 +139,11 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:0;left:0;right:0;z-index:1001;background:rgba(26,26,24,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px 20px 0 0;padding:10px 16px 32px}
+.mp{position:absolute;bottom:0;left:0;right:0;z-index:1001;background:rgba(26,26,24,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px 20px 0 0;padding:10px 16px 32px;max-height:60vh;overflow-y:auto}
 .mph{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 12px}
 .mpt{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .sort-hint{font-size:10px;color:var(--g700);font-weight:400;letter-spacing:0}
-.mlist{display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto}
+.mlist{display:flex;flex-direction:column;gap:6px;max-height:calc(60vh - 80px);overflow-y:auto}
 .mi{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
 .mi:last-child{border-bottom:none}
 .rank{width:20px;font-size:13px;font-weight:700;color:var(--g500);text-align:center;flex-shrink:0}
@@ -244,7 +244,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <div class="nrc-t">방 만들기</div>
       <div class="nrc-d" id="nrc-desc">링크를 공유하면 팀원이 바로 참여합니다</div>
       <div class="nrc-form">
-        <input class="rni" id="rni" type="text" placeholder="예: 공동 라이딩" maxlength="20" autocomplete="off">
+        <input class="rni" id="rni" type="text" placeholder="예: WE 수요 라이딩" maxlength="20" autocomplete="off">
         <button class="btn-cr" id="btn-cr" onclick="createRoom()">🚴 방 만들기</button>
       </div>
     </div>
@@ -354,6 +354,7 @@ const S = {
   gpxPoints:[], gpxLayer:null,
   dismissed:{behind:false,gpx:false},
   lastPush:0,
+  roomCreated:false, // 방 생성 플래그
 };
 
 const COLORS=['#FF6B35','#3B82F6','#10B981','#8B5CF6','#F59E0B','#EF4444','#EC4899','#06B6D4'];
@@ -421,6 +422,8 @@ async function init(){
   const saved=load('user');
   if(saved){
     S.user=saved;
+    // 이미 방을 만들었나?
+    S.roomCreated=load('roomCreated')??false;
     
     if(S.fbConn){
       renderHome(); hideLoader();
@@ -439,6 +442,18 @@ function renderHome(){
   $('uname').textContent=S.user.name;
   const av=$('uav'); av.textContent=S.user.name[0]; av.style.background=S.user.color;
   
+  // 방 생성 여부에 따라 버튼 활성화/비활성화
+  const btn=$('btn-cr');
+  if(S.roomCreated){
+    btn.disabled=true;
+    btn.textContent='방 이미 생성됨';
+    $('nrc-desc').textContent='방은 한 번만 만들 수 있습니다.';
+  } else {
+    btn.disabled=false;
+    btn.textContent='🚴 방 만들기';
+    $('nrc-desc').textContent='링크를 공유하면 팀원이 바로 참여합니다';
+  }
+
   if(S.fbConn) watchRooms(); else renderRooms({});
 }
 
@@ -473,11 +488,15 @@ function renderRooms(rooms){
 // ── 방 만들기
 window.createRoom=async function(){
   if(!S.fbConn){toast('Firebase를 확인해주세요');return;}
+  if(S.roomCreated){toast('⚠️ 방은 한 번만 만들 수 있습니다');return;}
   const name=$('rni').value.trim()||`${S.user.name}의 라이딩`;
   const id=uid();
   const {ref,set}=window._fb;
   await set(ref(db,`rooms/${id}`),{id,name,ownerId:S.user.id,createdAt:Date.now(),members:{}});
+  S.roomCreated=true;
+  save('roomCreated',true);
   $('rni').value='';
+  renderHome();
   joinRoom(id);
 };
 
