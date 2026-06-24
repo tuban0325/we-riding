@@ -254,7 +254,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.05</div>
+    <div class="version-info-inline">v1.06</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -514,11 +514,12 @@ $('ni').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
 window.doLogin=function(){
   const name=$('ni').value.trim(); if(!name){toast('이름을 입력해주세요');return;}
   const saved=load('user');
-  const id=saved?.id||uid();
+  const id=saved?.id||uid(); // ID는 유지 (색상 일관성)
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
   S.user={id,name,color:getColor(ci)};
-  save('user',S.user); save('ci',ci);
-  console.log('내 사용자 ID (방장 설정에 사용):', id);
+  // 이름은 저장 안 함 (새로고침 시 로그인 화면으로)
+  save('ci',ci); // 색상만 저장
+  console.log('내 사용자 ID:', id);
   // Firebase ID 설정 화면으로
   const fbpid=load('fbProjectId')||'we-riding';
   $('fb-project-id').value=fbpid;
@@ -539,21 +540,8 @@ async function init(){
   }
 
   const saved=load('user');
-  if(saved){
-    S.user=saved;
-    // 이미 방을 만들었나?
-    S.roomCreated=load('roomCreated')??false;
-    
-    if(S.fbConn){
-      renderHome(); hideLoader();
-      if(window._pendingRoom){screen('sh');joinRoom(window._pendingRoom);window._pendingRoom=null;}
-      else screen('sh');
-    } else {
-      hideLoader();
-      const fbpid=$('fb-project-id').value;
-      screen('s-fbsetup');
-    }
-  } else {hideLoader();screen('sl');}
+  // 항상 로그인 화면으로 (새로고침 시 이름 재입력)
+  hideLoader(); screen('sl');
 }
 
 // ── 홈
