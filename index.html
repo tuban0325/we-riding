@@ -209,7 +209,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v0.94</div>
+    <div class="version-info-inline">v0.95</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -553,21 +553,39 @@ window.createRoom=async function(){
 
 // ── 방 삭제
 window.deleteRoom=async function(roomId,fromInside=false){
-  if(!confirm('라이딩을 종료할까요?\n모든 팀원이 자동으로 홈으로 이동합니다.')) return;
+  if(!confirm('라이딩을 나갈까요?\n다른 팀원은 계속 라이딩할 수 있습니다.')) return;
   if(!S.fbConn||!window._fb) return;
   try{
-    const {ref,remove}=window._fb;
-    // 방 완전 삭제
-    await remove(ref(db,`rooms/${roomId}`));
-    // roomCreated 초기화 (이 방을 만든 사람)
-    S.roomCreated=false;
-    save('roomCreated',false);
-    toast('🏁 라이딩이 종료되고 방이 삭제됐어요');
+    const {ref,set,get}=window._fb;
+    // 최신 members 데이터 읽기
+    const snap=await get(ref(db,`rooms/${roomId}/members`));
+    const members=snap.val()||{};
+    const otherMembers=Object.keys(members).filter(uid=>uid!==S.user.id);
+    
+    // 현재 사용자가 방장인지 확인
+    const roomSnap=await get(ref(db,`rooms/${roomId}`));
+    const roomData=roomSnap.val()||{};
+    const isOwner=roomData.ownerId===S.user.id;
+    
+    if(isOwner&&otherMembers.length>0){
+      // 방장이 나가는데 다른 팀원이 있으면 새 방장 지정
+      const newOwnerId=otherMembers[0];
+      await set(ref(db,`rooms/${roomId}/ownerId`),newOwnerId);
+      toast('👑 새로운 방장이 지정됐어요');
+    } else if(isOwner&&otherMembers.length===0){
+      // 마지막 사람(방장)이 나가면 방 삭제
+      await window._fb.remove(ref(db,`rooms/${roomId}`));
+    }
+    
+    // 자신을 제거 (방 자체는 유지)
+    await window._fb.remove(ref(db,`rooms/${roomId}/members/${S.user.id}`));
+    toast('방에서 나갔어요');
+    
     if(fromInside) leaveRoom(true);
-    else renderHome(); // 홈 화면 갱신
+    else renderHome();
   }catch(e){
     console.error('deleteRoom error:',e);
-    toast('⚠️ 방 삭제 중 오류가 발생했어요');
+    toast('⚠️ 오류가 발생했어요');
   }
 };
 window.endRoom=function(){if(S.room) window.deleteRoom(S.room.id,true);};
@@ -763,27 +781,29 @@ window.leaveRoom=async function(forced=false){
   
   if(!forced&&S.fbConn&&S.room&&window._fb){
     try{
-      const members = S.room.members || {};
-      const otherMembers = Object.keys(members).filter(uid => uid !== S.user.id);
+      const {ref,get}=window._fb;
+      // Firebase에서 최신 members 데이터 직접 읽기
+      const snap=await get(ref(db,`rooms/${S.room.id}/members`));
+      const members=snap.val()||{};
+      const otherMembers=Object.keys(members).filter(uid=>uid!==S.user.id);
       
-      if(S.isOwner&&otherMembers.length > 0){
-        // 방장이 나가는데 다른 팀원이 있으면 → 새 방장 지정
-        const newOwnerId = otherMembers[0];
-        await window._fb.set(
-          window._fb.ref(db, `rooms/${S.room.id}/ownerId`),
-          newOwnerId
-        );
-        toast('👑 새로운 방장이 지정되었습니다');
-      } else if(S.isOwner&&otherMembers.length === 0){
-        // 마지막 사람(방장)이 나가면 방 삭제
-        await window._fb.remove(window._fb.ref(db, `rooms/${S.room.id}`));
+      if(S.isOwner&&otherMembers.length>0){
+        // 방장이 나가는데 다른 팀원이 있으면 → 새 방장 지정 (절대 방 삭제 안 함!)
+        const newOwnerId=otherMembers[0];
+        await window._fb.set(ref(db,`rooms/${S.room.id}/ownerId`),newOwnerId);
+        toast('👑 새로운 방장이 지정됐어요');
+      } else if(S.isOwner&&otherMembers.length===0){
+        // 마지막 사람(방장)이 나가면만 방 삭제
+        await window._fb.remove(ref(db,`rooms/${S.room.id}`));
         S.roomCreated=false;
         save('roomCreated',false);
       }
       
-      // 자신을 멤버에서 제거
-      await window._fb.remove(window._fb.ref(db,`rooms/${S.room.id}/members/${S.user.id}`));
-    }catch(e){}
+      // 자신을 멤버에서 제거 (방 자체는 유지!)
+      await window._fb.remove(ref(db,`rooms/${S.room.id}/members/${S.user.id}`));
+    }catch(e){
+      console.error('leaveRoom error:',e);
+    }
   }
   
   if(roomListener){roomListener();roomListener=null;}
