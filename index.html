@@ -68,6 +68,17 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .sec-t{font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
 .dbbar{background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:12px;color:#2ECC71;text-align:center}
 
+/* GPX 바 */
+.gpx-bar{background:#fff;border:1px solid var(--g100);border-radius:var(--r);padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.gpx-icon{font-size:22px;flex-shrink:0}
+.gpx-info{flex:1;min-width:0}
+.gpx-name{font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gpx-desc{font-size:11px;color:var(--g500)}
+.gpx-btns{display:flex;gap:6px;flex-shrink:0}
+.btn-gpx{padding:7px 10px;background:var(--g100);color:var(--g700);font-family:var(--font);font-size:12px;font-weight:600;border:none;border-radius:8px;cursor:pointer;white-space:nowrap}
+.btn-gpx.loaded{background:#E8F5E9;color:#2E7D32}
+.btn-gpx-del{padding:7px 10px;background:#FFF0F0;color:var(--red);font-family:var(--font);font-size:12px;font-weight:600;border:none;border-radius:8px;cursor:pointer;display:none}
+
 /* 방 만들기 */
 .nrc{background:var(--orange);border-radius:var(--r);padding:20px;margin-bottom:20px;position:relative;overflow:hidden}
 .nrc::after{content:'🚴';position:absolute;right:16px;bottom:-4px;font-size:52px;opacity:.25}
@@ -139,7 +150,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:0;left:0;right:0;z-index:1001;background:rgba(26,26,24,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px 20px 0 0;padding:10px 16px 32px;max-height:60vh;overflow:hidden;display:flex;flex-direction:column}
+.mp{position:absolute;bottom:0;left:0;right:0;z-index:1001;background:rgba(26,26,24,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px 20px 0 0;padding:10px 16px 32px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column}
 .mph{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 12px;flex-shrink:0}
 .mpt{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-shrink:0}
 .sort-hint{font-size:10px;color:var(--g700);font-weight:400;letter-spacing:0}
@@ -217,7 +228,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     <div class="fbsetup-title">🔥 Firebase 설정</div>
     <div class="fbsetup-desc">
       WE Riding을 초기화하기 위해 프로젝트 ID가 필요합니다.<br>
-      기본값은 "riding"입니다.
+      기본값은 "we-riding"입니다.
     </div>
     <div class="fbi-group">
       <label class="fbi-label">Firebase Project ID</label>
@@ -237,6 +248,21 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   </div>
   <div class="hbody">
     <div id="dbbar" class="dbbar">✅ Firebase 연결됨</div>
+
+    <!-- GPX -->
+    <div class="sec-t">코스 파일 (선택)</div>
+    <div class="gpx-bar">
+      <div class="gpx-icon">🗺️</div>
+      <div class="gpx-info">
+        <div class="gpx-name" id="gpx-name">GPX 파일 없음</div>
+        <div class="gpx-desc" id="gpx-desc">업로드하면 코스 이탈 시 알림을 받아요</div>
+      </div>
+      <div class="gpx-btns">
+        <input type="file" id="gpx-file" accept=".gpx" style="display:none" onchange="loadGpx(this)">
+        <button class="btn-gpx" id="btn-gpx-load" onclick="document.getElementById('gpx-file').click()">파일 선택</button>
+        <button class="btn-gpx-del" id="btn-gpx-del" onclick="deleteGpx()">✕</button>
+      </div>
+    </div>
 
     <!-- 방 만들기 (한 번만) -->
     <div class="sec-t">새 라이딩 시작</div>
@@ -400,7 +426,7 @@ window.doLogin=function(){
   save('user',S.user); save('ci',ci);
   console.log('내 사용자 ID (방장 설정에 사용):', id);
   // Firebase ID 설정 화면으로
-  const fbpid=load('fbProjectId')||'riding';
+  const fbpid=load('fbProjectId')||'we-riding';
   $('fb-project-id').value=fbpid;
   screen('s-fbsetup');
 };
@@ -484,6 +510,38 @@ function renderRooms(rooms){
   }).join('');
 }
 
+// ── GPX
+window.loadGpx=function(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const xml=new DOMParser().parseFromString(e.target.result,'text/xml');
+      const pts=xml.querySelectorAll('trkpt');
+      if(!pts.length){toast('경로 데이터가 없어요');return;}
+      S.gpxPoints=Array.from(pts).map(p=>({lat:parseFloat(p.getAttribute('lat')),lng:parseFloat(p.getAttribute('lon'))}));
+      $('gpx-name').textContent=`📍 ${file.name}`;
+      $('gpx-desc').textContent=`${S.gpxPoints.length}개 포인트 · 코스 이탈 시 알림`;
+      $('btn-gpx-load').textContent='변경';
+      $('btn-gpx-load').classList.add('loaded');
+      $('btn-gpx-del').style.display='block';
+      toast(`✅ GPX 로드 완료 (${S.gpxPoints.length}포인트)`);
+    }catch(e){toast('GPX 파일을 읽을 수 없어요');}
+  };
+  reader.readAsText(file);
+};
+window.deleteGpx=function(){
+  S.gpxPoints=[];
+  $('gpx-name').textContent='GPX 파일 없음';
+  $('gpx-desc').textContent='업로드하면 코스 이탈 시 알림을 받아요';
+  $('btn-gpx-load').textContent='파일 선택';
+  $('btn-gpx-load').classList.remove('loaded');
+  $('btn-gpx-del').style.display='none';
+  $('gpx-file').value='';
+  if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
+  toast('GPX 삭제됨');
+};
+
 // ── 방 만들기
 window.createRoom=async function(){
   if(!S.fbConn){toast('Firebase를 확인해주세요');return;}
@@ -520,7 +578,7 @@ window.joinRoom=async function(roomId){
   screen('sr');
   $('rnm').textContent=S.room.name;
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
-  setTimeout(()=>{initMap();startTracking(roomId);startSync(roomId);},80);
+  setTimeout(()=>{initMap();drawGpx();startTracking(roomId);startSync(roomId);},80);
 };
 
 // ── 지도
@@ -532,6 +590,12 @@ function initMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
   S.map=map;
   setTimeout(()=>{try{map.invalidateSize();}catch(e){}},150);
+}
+function drawGpx(){
+  if(!S.gpxPoints.length||!S.map) return;
+  if(S.gpxLayer){try{S.map.removeLayer(S.gpxLayer);}catch(e){}}
+  S.gpxLayer=L.polyline(S.gpxPoints.map(p=>[p.lat,p.lng]),{color:'#4FC3F7',weight:3,opacity:.85,dashArray:'6 4'}).addTo(S.map);
+  S.map.fitBounds(S.gpxLayer.getBounds(),{padding:[40,40]});
 }
 
 // ── Firebase 동기화
@@ -606,7 +670,8 @@ function simPos(roomId){
 function mkrIcon(name,color,isMe){
   const s=isMe?42:36;
   const ring=isMe?`border:3px solid #fff;box-shadow:0 0 0 3px ${color},0 4px 12px rgba(0,0,0,.4)`:`border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)`;
-  const html=`<div style="width:${s}px;height:${s}px;border-radius:50%;background:${color};${ring};display:flex;align-items:center;justify-content:center;font-size:${isMe?15:13}px;font-weight:700;color:#fff;font-family:-apple-system,sans-serif;position:relative">${name[0]}<div style="position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid ${color}"></div></div>`;
+  const txt=name.substring(0,2);
+  const html=`<div style="width:${s}px;height:${s}px;border-radius:50%;background:${color};${ring};display:flex;align-items:center;justify-content:center;font-size:${isMe?12:11}px;font-weight:700;color:#fff;font-family:-apple-system,sans-serif;position:relative;line-height:1">${txt}<div style="position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid ${color}"></div></div>`;
   return L.divIcon({html,className:'',iconSize:[s,s+7],iconAnchor:[s/2,s+7]});
 }
 
@@ -688,6 +753,7 @@ window.leaveRoom=async function(forced=false){
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
   $('btn-end').style.display='none';
+  if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
   S.room=null;S.isOwner=false;
   renderHome();screen('sh');
