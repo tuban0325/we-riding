@@ -206,10 +206,6 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="sub">팀원들과 실시간 위치 공유</div>
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
-    <button class="btn-kk" onclick="loginKakao()">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.74 1.64 5.15 4.14 6.63-.16.58-.59 2.1-.67 2.43-.1.4.14.39.3.28.12-.08 1.95-1.32 2.74-1.86.47.07.96.1 1.49.1 5.523 0 10-3.477 10-7.8S17.523 3 12 3z"/></svg>
-      카카오로 시작하기
-    </button>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
   </div>
   <div class="nw" id="ls2" style="display:none">
@@ -513,6 +509,7 @@ function renderRooms(rooms){
 
 // ── GPX
 window.loadGpx=function(input){
+  if(S.room&&!S.isOwner){toast('⚠️ 방장만 GPX를 등록할 수 있습니다');input.value='';return;}
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
@@ -526,12 +523,14 @@ window.loadGpx=function(input){
       $('btn-gpx-load').textContent='변경';
       $('btn-gpx-load').classList.add('loaded');
       $('btn-gpx-del').style.display='block';
+      if(S.map&&S.gpxPoints.length) drawGpx();
       toast(`✅ GPX 로드 완료 (${S.gpxPoints.length}포인트)`);
     }catch(e){toast('GPX 파일을 읽을 수 없어요');}
   };
   reader.readAsText(file);
 };
 window.deleteGpx=function(){
+  if(S.room&&!S.isOwner){toast('⚠️ 방장만 GPX를 삭제할 수 있습니다');return;}
   S.gpxPoints=[];
   $('gpx-name').textContent='GPX 파일 없음';
   $('gpx-desc').textContent='업로드하면 코스 이탈 시 알림을 받아요';
@@ -595,7 +594,7 @@ function initMap(){
 function drawGpx(){
   if(!S.gpxPoints.length||!S.map) return;
   if(S.gpxLayer){try{S.map.removeLayer(S.gpxLayer);}catch(e){}}
-  S.gpxLayer=L.polyline(S.gpxPoints.map(p=>[p.lat,p.lng]),{color:'#4FC3F7',weight:3,opacity:.85,dashArray:'6 4'}).addTo(S.map);
+  S.gpxLayer=L.polyline(S.gpxPoints.map(p=>[p.lat,p.lng]),{color:'#1565C0',weight:4,opacity:.9,dashArray:'6 4'}).addTo(S.map);
   S.map.fitBounds(S.gpxLayer.getBounds(),{padding:[40,40]});
 }
 
@@ -604,6 +603,7 @@ function startSync(roomId){
   if(!db||!window._fb) return;
   if(roomListener){roomListener();roomListener=null;}
   const {ref,onValue}=window._fb;
+  let prevOwnerId=null;
   roomListener=onValue(ref(db,`rooms/${roomId}`),snap=>{
     if(!snap.exists()) return;
     const data=snap.val();
@@ -613,7 +613,15 @@ function startSync(roomId){
     }
     const members=data.members||{};
     if(data.name) $('rnm').textContent=data.name;
+    const wasOwner=S.isOwner;
     S.isOwner=data.ownerId===S.user?.id;
+    
+    // 새로운 방장이 지정되었을 때 알림
+    if(data.ownerId!==prevOwnerId&&S.isOwner&&!wasOwner){
+      toast('👑 축하합니다! 새로운 방장입니다');
+    }
+    prevOwnerId=data.ownerId;
+    
     $('btn-end').style.display=S.isOwner?'block':'none';
 
     Object.entries(members).forEach(([uid,m])=>{
@@ -747,9 +755,32 @@ window.leaveRoom=async function(forced=false){
   if(S.statTmr)clearInterval(S.statTmr);
   S.watchId=null;S.statTmr=null;S.myPos=null;S.myMkr=null;S.mkrs={};S.mySpeed=0;
   S.dismissed={behind:false};
+  
   if(!forced&&S.fbConn&&S.room&&window._fb){
-    try{await window._fb.remove(window._fb.ref(db,`rooms/${S.room.id}/members/${S.user.id}`));}catch(e){}
+    try{
+      const members = S.room.members || {};
+      const otherMembers = Object.keys(members).filter(uid => uid !== S.user.id);
+      
+      if(S.isOwner&&otherMembers.length > 0){
+        // 방장이 나가는데 다른 팀원이 있으면 → 새 방장 지정
+        const newOwnerId = otherMembers[0];
+        await window._fb.set(
+          window._fb.ref(db, `rooms/${S.room.id}/ownerId`),
+          newOwnerId
+        );
+        toast('👑 새로운 방장이 지정되었습니다');
+      } else if(S.isOwner&&otherMembers.length === 0){
+        // 마지막 사람(방장)이 나가면 방 삭제
+        await window._fb.remove(window._fb.ref(db, `rooms/${S.room.id}`));
+        S.roomCreated=false;
+        save('roomCreated',false);
+      }
+      
+      // 자신을 멤버에서 제거
+      await window._fb.remove(window._fb.ref(db,`rooms/${S.room.id}/members/${S.user.id}`));
+    }catch(e){}
   }
+  
   if(roomListener){roomListener();roomListener=null;}
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
