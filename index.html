@@ -138,14 +138,14 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .gpxm-btn{width:100%;padding:13px;border:none;border-radius:12px;background:#1565C0;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
 .gpxm-btn.gpxm-del{background:#FFF0F0;color:#e53935;margin-top:6px}
 .gpxm-alert-section{background:#f0f7ff;border-radius:12px;padding:14px}
-.gpxm-alert-title{font-size:13px;font-weight:700;color:#1565C0;margin-bottom:10px}
-.gpxm-toggle-row{display:flex;align-items:center;justify-content:space-between;cursor:pointer}
-.gpxm-toggle-row span{font-size:14px;color:#333}
-.gpxm-toggle{width:44px;height:24px;background:#ccc;border-radius:12px;position:relative;transition:background .2s;flex-shrink:0}
-.gpxm-toggle.on{background:#1565C0}
-.gpxm-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.gpxm-toggle.on .gpxm-knob{left:23px}
-.gpxm-alert-desc{font-size:11px;color:#888;margin-top:8px}
+.gpxm-alert-title{font-size:13px;font-weight:700;color:#1565C0;margin-bottom:4px}
+.gpxm-alert-desc-top{font-size:11px;color:#888;margin-bottom:12px}
+.gpxm-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.gpxm-opt{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 6px;border:2px solid #dde6f0;border-radius:12px;background:#fff;cursor:pointer;font-family:var(--font);transition:all .15s}
+.gpxm-opt.sel{border-color:#1565C0;background:#e8f0fb}
+.gpxopt-icon{font-size:22px;line-height:1}
+.gpxopt-label{font-size:13px;font-weight:700;color:#333}
+.gpxopt-sub{font-size:10px;color:#888}
 
 /* 팀원 모달 */
 .mm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:2000;display:none;align-items:flex-end;justify-content:center}
@@ -174,14 +174,14 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .lc-leader-name{font-size:12px;color:var(--g300);text-align:center;margin-top:6px}
 
 /* 통계 */
-.mstats{position:absolute;bottom:160px;left:12px;right:12px;z-index:1000;pointer-events:none}
+.mstats{position:absolute;bottom:12px;right:12px;z-index:1000;pointer-events:none;width:220px}
 .srow{display:flex;gap:8px}
 .sc{flex:1;background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;padding:10px 12px;text-align:center}
 .sv{font-size:22px;font-weight:700;color:#fff;line-height:1;margin-bottom:2px}
 .su{font-size:10px;color:var(--g300);font-weight:500}
 
 /* 지도 버튼 */
-.mctrl{position:absolute;right:12px;bottom:175px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.mctrl{position:absolute;right:12px;bottom:140px;z-index:1000;display:flex;flex-direction:column;gap:8px}
 .mbtn{width:44px;height:44px;border-radius:12px;background:rgba(26,26,24,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mbtn:active{background:rgba(255,107,53,.6)}
 
@@ -195,21 +195,21 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:0;left:0;right:0;z-index:1001;background:rgba(26,26,24,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px 20px 0 0;padding:10px 16px 32px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
-.mph{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 12px;flex-shrink:0}
-.mpt{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-shrink:0}
-.sort-hint{font-size:10px;color:var(--g700);font-weight:400;letter-spacing:0}
-.mlist{display:flex;flex-direction:column;gap:6px;flex:1;max-height:calc(85vh - 100px);overflow-y:scroll;overflow-x:hidden;min-height:0;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
-.mi{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.mp{position:absolute;bottom:100px;left:12px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;width:190px;max-height:220px;overflow:hidden;display:flex;flex-direction:column}
+.mph{display:none}
+.mpt{font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;flex-shrink:0}
+.sort-hint{display:none}
+.mlist{display:flex;flex-direction:column;gap:3px;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+.mi{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}
 .mi:last-child{border-bottom:none}
-.rank{width:20px;font-size:13px;font-weight:700;color:var(--g500);text-align:center;flex-shrink:0}
-.mav{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
-.crown{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-size:10px;line-height:1}
-.md{flex:1;min-width:0}
-.mnrow{display:flex;align-items:center;gap:5px;margin-bottom:1px}
-.mn{font-size:13px;font-weight:600;color:#fff}
-.mybadge{font-size:10px;background:var(--orange);color:#fff;padding:1px 5px;border-radius:4px;font-weight:700}
-.mspd{font-size:11px;color:var(--g500)}
+.rank{width:14px;font-size:11px;font-weight:700;color:var(--g500);text-align:center;flex-shrink:0}
+.mav{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.crown{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:9px;line-height:1}
+.md{flex:1;min-width:0;overflow:hidden}
+.mnrow{display:flex;align-items:center;gap:3px;margin-bottom:1px}
+.mn{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72px}
+.mybadge{font-size:9px;background:var(--orange);color:#fff;padding:1px 3px;border-radius:3px;font-weight:700;flex-shrink:0}
+.mspd{font-size:10px;color:var(--g500)}
 .mspd span{color:var(--g300)}
 .mgap{flex-shrink:0;text-align:right}
 .bb{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;display:block;margin-bottom:1px}
@@ -252,7 +252,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.00</div>
+    <div class="version-info-inline">v1.03</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -315,7 +315,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-back" onclick="leaveRoom()">←</button>
       <div class="rnm" id="rnm">라이딩</div>
       <button class="btn-gpx-hud" id="btn-gpx-hud" onclick="openGpxModal()" title="GPX 코스 등록">🗺️</button>
-      <button class="btn-members" id="btn-members" onclick="showMemberModal()">👥 <span id="mbadge">1</span>명</button>
+      <button class="btn-members" id="btn-members" onclick="showMemberModal()">👥 <span id="mbadge">1명</span></button>
       <button class="btn-sh" onclick="openSS()">🔗</button>
     </div>
   </div>
@@ -383,16 +383,26 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
         <button class="gpxm-btn" onclick="document.getElementById('gpx-file2').click()">📂 파일 선택</button>
         <button class="gpxm-btn gpxm-del" id="gpxm-del-btn" onclick="deleteGpxInRoom()" style="display:none">🗑 코스 삭제</button>
       </div>
-      <!-- 이탈 알림 설정 (방장만, GPX 있을 때) -->
+      <!-- 이탈 알림 설정 (GPX 있을 때, 방장 비방장 모두 보임) -->
       <div class="gpxm-alert-section" id="gpxm-alert-section" style="display:none">
-        <div class="gpxm-alert-title">📣 이탈 알림 설정</div>
-        <label class="gpxm-toggle-row">
-          <span>나에게 진동+소리로 알리기</span>
-          <div class="gpxm-toggle" id="gpxm-toggle" onclick="toggleGpxAlert()">
-            <div class="gpxm-knob"></div>
-          </div>
-        </label>
-        <div class="gpxm-alert-desc">코스에서 50m 이상 벗어나면 진동과 소리로 알려드립니다</div>
+        <div class="gpxm-alert-title">📣 경로 이탈 알림</div>
+        <div class="gpxm-alert-desc-top">코스에서 50m 이상 벗어나면 알립니다</div>
+        <div class="gpxm-opts">
+          <button class="gpxm-opt" id="gpxopt-0" onclick="setGpxAlert(0)">
+            <span class="gpxopt-icon">🔕</span>
+            <span class="gpxopt-label">없음</span>
+          </button>
+          <button class="gpxm-opt" id="gpxopt-1" onclick="setGpxAlert(1)">
+            <span class="gpxopt-icon">🔔</span>
+            <span class="gpxopt-label">나만</span>
+            <span class="gpxopt-sub">진동+소리</span>
+          </button>
+          <button class="gpxm-opt" id="gpxopt-2" onclick="setGpxAlert(2)">
+            <span class="gpxopt-icon">📢</span>
+            <span class="gpxopt-label">전체</span>
+            <span class="gpxopt-sub">모두 배너</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -460,7 +470,7 @@ const S = {
   statTmr:null, fbConn:false,
   gpxPoints:[], gpxLayer:null,
   dismissed:{behind:false,gpxdev:false},
-  gpxAlert:false,
+  gpxAlert:0,
   lastPush:0,
   roomCreated:false,
 };
@@ -615,16 +625,26 @@ function updateGpxModalUI(){
   $('btn-gpx-hud').classList.toggle('active',hasGpx);
   if(S.isOwner){
     $('gpxm-del-btn').style.display=hasGpx?'block':'none';
-    $('gpxm-alert-section').style.display=hasGpx?'block':'none';
-    const tog=$('gpxm-toggle');
-    tog.classList.toggle('on',!!S.gpxAlert);
   }
+  // 알림 설정 섹션: GPX 있으면 누구나 볼 수 있음
+  $('gpxm-alert-section').style.display=hasGpx?'block':'none';
+  // 선택 버튼 active 상태 업데이트
+  [0,1,2].forEach(i=>{
+    const btn=$(`gpxopt-${i}`);
+    if(btn) btn.classList.toggle('sel', S.gpxAlert===i);
+  });
 }
 
-window.toggleGpxAlert=function(){
-  S.gpxAlert=!S.gpxAlert;
-  $('gpxm-toggle').classList.toggle('on',S.gpxAlert);
-  toast(S.gpxAlert?'🔔 이탈 알림 켜짐':'🔕 이탈 알림 꺼짐');
+window.setGpxAlert=async function(mode){
+  S.gpxAlert=mode;
+  // mode=2(전체)이면 Firebase에 저장해서 다른 팀원도 알 수 있게
+  if(S.fbConn&&S.room&&window._fb){
+    const {ref,set}=window._fb;
+    await set(ref(db,`rooms/${S.room.id}/gpxAlertMode`),mode);
+  }
+  updateGpxModalUI();
+  const labels=['🔕 알림 없음','🔔 나만 알림 켜짐','📢 전체 알림 켜짐'];
+  toast(labels[mode]);
 };
 
 // ── 방 안에서 GPX 로드 (방장만)
@@ -662,7 +682,7 @@ window.deleteGpxInRoom=async function(){
     await remove(ref(db,`rooms/${S.room.id}/gpx`));
   }
   S.gpxPoints=[];
-  S.gpxAlert=false;
+  S.gpxAlert=0;
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   updateGpxModalUI();
   toast('코스가 삭제됐어요');
@@ -684,30 +704,50 @@ function distToGpx(lat,lng){
   return minD;
 }
 
-// ── GPX 이탈 알림 (방장 전용)
+// ── GPX 이탈 알림 (mode별 분기)
 function checkGpxDeviation(){
-  if(!S.gpxPoints||!S.gpxPoints.length||!S.myPos||!S.gpxAlert||!S.isOwner) return;
+  if(!S.gpxPoints||!S.gpxPoints.length||!S.myPos) return;
+  if(S.gpxAlert===0) return; // 없음
   if(S.dismissed.gpxdev) return;
   const d=distToGpx(S.myPos.lat,S.myPos.lng);
   if(d>0.05){ // 50m 이상 이탈
     $('ab-gpxdev').classList.add('show');
-    // 진동 (200ms × 3)
-    if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
-    // 소리 (Web Audio API)
-    try{
-      const ctx=new(window.AudioContext||window.webkitAudioContext)();
-      [880,660,880].forEach((freq,i)=>{
-        const osc=ctx.createOscillator();
-        const gain=ctx.createGain();
-        osc.connect(gain);gain.connect(ctx.destination);
-        osc.frequency.value=freq;
-        osc.type='sine';
-        gain.gain.setValueAtTime(.4,ctx.currentTime+i*.25);
-        gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.25+.2);
-        osc.start(ctx.currentTime+i*.25);
-        osc.stop(ctx.currentTime+i*.25+.25);
-      });
-    }catch(e){}
+    if(S.gpxAlert===1){
+      // 나만: 진동+소리
+      if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+      try{
+        const ctx=new(window.AudioContext||window.webkitAudioContext)();
+        [880,660,880].forEach((freq,i)=>{
+          const osc=ctx.createOscillator(), gain=ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value=freq; osc.type='sine';
+          gain.gain.setValueAtTime(.4,ctx.currentTime+i*.25);
+          gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.25+.2);
+          osc.start(ctx.currentTime+i*.25);
+          osc.stop(ctx.currentTime+i*.25+.25);
+        });
+      }catch(e){}
+    } else if(S.gpxAlert===2){
+      // 전체: 배너만 (모든 팀원이 각자 화면에서 볼 수 있도록)
+      // 나도 진동+소리
+      if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+      try{
+        const ctx=new(window.AudioContext||window.webkitAudioContext)();
+        [880,660,880].forEach((freq,i)=>{
+          const osc=ctx.createOscillator(), gain=ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value=freq; osc.type='sine';
+          gain.gain.setValueAtTime(.4,ctx.currentTime+i*.25);
+          gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.25+.2);
+          osc.start(ctx.currentTime+i*.25); osc.stop(ctx.currentTime+i*.25+.25);
+        });
+      }catch(e){}
+      // Firebase에 이탈 이벤트 기록 → 팀원 startSync에서 감지
+      if(S.fbConn&&S.room&&window._fb){
+        const {ref,set}=window._fb;
+        set(ref(db,`rooms/${S.room.id}/gpxDeviation`),{uid:S.user.id,name:S.user.name,ts:Date.now()}).catch(()=>{});
+      }
+    }
     S.dismissed.gpxdev=true;
     setTimeout(()=>{S.dismissed.gpxdev=false;},60000);
   } else {
@@ -826,6 +866,22 @@ function startSync(roomId){
       S.gpxPoints=[];
       if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
       updateGpxModalUI();
+    }
+    // gpxAlertMode 동기화 (방장이 바꾸면 팀원도 반영)
+    if(data.gpxAlertMode!=null && data.gpxAlertMode!==S.gpxAlert){
+      S.gpxAlert=data.gpxAlertMode;
+      updateGpxModalUI();
+    }
+    // 전체 알림 mode=2: 누군가 이탈하면 모든 팀원에게 배너
+    if(S.gpxAlert===2 && data.gpxDeviation){
+      const dev=data.gpxDeviation;
+      const el=$('ab-gpxdev');
+      if(dev.uid!==S.user.id && dev.ts && Date.now()-dev.ts<10000 && !S.dismissed.gpxdev){
+        el.querySelector('.abtxt').textContent=`📍 ${dev.name}님이 코스를 벗어났어요!`;
+        el.classList.add('show');
+        S.dismissed.gpxdev=true;
+        setTimeout(()=>{S.dismissed.gpxdev=false; el.querySelector('.abtxt').textContent='코스를 벗어났어요! 경로를 확인하세요.';},60000);
+      }
     }
     
     if(data.name) $('rnm').textContent=data.name;
@@ -1004,7 +1060,7 @@ window.leaveRoom=async function(forced=false){
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
   $('ab-gpxdev').classList.remove('show');
-  S.gpxPoints=[];S.gpxAlert=false;
+  S.gpxPoints=[];S.gpxAlert=0;
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
   S.room=null;S.isOwner=false;
