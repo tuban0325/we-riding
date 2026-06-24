@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#FF6B35">
-<title>WE 라이딩</title>
+<title> WE 라이딩 0.95 </title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -39,6 +39,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 
 /* 버전 정보 */
 .version-info{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.8px}
+.version-info-inline{font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.8px;margin-top:12px;text-align:center}
 .nrow{display:flex;gap:8px;width:100%}
 .ni{flex:1 1 0;min-width:0;padding:13px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-family:var(--font);font-size:15px;outline:none}
 .ni::placeholder{color:var(--g500)}.ni:focus{border-color:var(--orange)}
@@ -208,6 +209,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
+    <div class="version-info-inline">v0.92</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -217,7 +219,6 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     </div>
     <div class="nhint">최대 8자 · 지도에 표시돼요</div>
   </div>
-  <div class="version-info">v0.92</div>
 </div>
 
 <!-- ══ Firebase ID 설정 ══ -->
