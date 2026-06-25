@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.16</div>
+    <div class="version-info-inline">v1.18</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -444,18 +444,22 @@ let db = null, roomListener = null, roomsListener = null;
 
 async function initFb(projectId) {
   try {
-    const {initializeApp,getApps,getApp} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const {getDatabase,ref,set,onValue,remove,update} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    // 10초 타임아웃
+    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+    const imports = Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js')
+    ]);
+    const [{initializeApp,getApps,getApp},{getDatabase,ref,set,onValue,remove,update}] = await Promise.race([imports,timeout]);
     
     const FB_CONFIG = {
       apiKey: "AIzaSyCMG8XfoKA2xhKvAfvU769Hg8IzE6wYOgI",
       authDomain: `${projectId}.firebaseapp.com`,
-      databaseURL: `https://${projectId}-default-rtdb.firebaseio.com`,
+      databaseURL: `https://we-riding-default-rtdb.firebaseio.com`,
       projectId: projectId,
       storageBucket: `${projectId}.appspot.com`,
       messagingSenderId: "612289069537",
       appId: "1:612289069537:web:f17ef1ea1b3f86985492a0",
-      measurementId: "G-KRH9N9SLM5"
     };
 
     const app = getApps().length ? getApp() : initializeApp(FB_CONFIG);
@@ -533,16 +537,21 @@ window.doLogin=function(){
 
 // ── 초기화
 async function init(){
-  const params=new URLSearchParams(location.search);
-  const rc=params.get('room'); if(rc) window._pendingRoom=rc;
-  
-  // 항상 we-riding으로 자동 연결 시도
-  const fbpid=load('fbProjectId')||'we-riding';
-  loaderTxt('Firebase 연결 중...');
-  const ok=await initFb(fbpid);
-  if(ok){ S.fbConn=true; save('fbProjectId',fbpid); }
-  
-  hideLoader(); screen('sl');
+  try{
+    const params=new URLSearchParams(location.search);
+    const rc=params.get('room'); if(rc) window._pendingRoom=rc;
+    
+    loaderTxt('Firebase 연결 중...');
+    const fbpid=load('fbProjectId')||'we-riding';
+    const ok=await initFb(fbpid);
+    if(ok){ S.fbConn=true; save('fbProjectId',fbpid); }
+  }catch(e){
+    console.error('init error:',e);
+  }finally{
+    // 반드시 로더 숨기고 로그인 화면으로
+    hideLoader();
+    screen('sl');
+  }
 }
 
 // ── 홈
@@ -981,7 +990,7 @@ function renderPanel(members,ownerId){
       <div class="rank">${rankTxt}</div>
       <div class="mav" style="background:${m.color||'#888'}">${isOwn?'<span class="crown">👑</span>':''}${(m.name||'?')[0]}</div>
       <div class="md">
-        <div class="mnrow"><span class="mn">${m.name}${stale?` <span style='font-size:9px;color:#e74c3c'>⚫${staleLabel}</span>':''}</span>${isMe?'<span class="mybadge">나</span>':''}</div>
+        <div class="mnrow"><span class="mn">${m.name}${stale?'<span style="font-size:9px;color:#e74c3c"> ⚫'+staleLabel+'</span>':''}</span>${isMe?'<span class="mybadge">나</span>':''}</div>
         <div class="mspd">속도 <span>${(m.speed||0).toFixed(1)} km/h</span></div>
       </div>${gapHtml}
     </div>`;
