@@ -515,8 +515,10 @@ window.initFirebaseWithId=async function(){
   if(ok){
     S.fbConn=true;
     save('fbProjectId',pid);
-    renderHome();
-    screen('sh');
+    if(!tryJoinPendingRoom()){
+      renderHome();
+      screen('sh');
+    }
   } else {
     toast('❌ Firebase 연결 실패. 프로젝트 ID를 확인해주세요');
   }
@@ -525,15 +527,30 @@ window.initFirebaseWithId=async function(){
 // ── 로그인
 window.showNS=function(pre=''){$('ls1').style.display='none';$('ls2').style.display='block';if(pre)$('ni').value=pre;$('ni').focus();};
 $('ni').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
-window.doLogin=function(){
+window.doLogin=async function(){
   const name=$('ni').value.trim(); if(!name){toast('이름을 입력해주세요');return;}
   const saved=load('user');
   const id=saved?.id||uid();
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
   S.user={id,name,color:getColor(ci)};
   save('ci',ci);
+  save('user',{id,name});
   const fbpid=load('fbProjectId')||'we-riding';
   $('fb-project-id').value=fbpid;
+
+  if(window._pendingRoom){
+    loaderTxt('Firebase 연결 중...');
+    $('lov').classList.remove('hidden');
+    const ok=await initFb(fbpid);
+    hideLoader();
+    if(ok){
+      S.fbConn=true;
+      save('fbProjectId',fbpid);
+      tryJoinPendingRoom();
+      return;
+    }
+    toast('❌ Firebase 연결 실패. 프로젝트 ID를 확인해주세요');
+  }
   screen('s-fbsetup');
 };
 
@@ -541,6 +558,31 @@ window.doLogin=function(){
 async function init(){
   const params=new URLSearchParams(location.search);
   const rc=params.get('room'); if(rc) window._pendingRoom=rc;
+
+  const saved=load('user');
+  if(saved?.id&&saved?.name){
+    const ci=load('ci')??0;
+    S.user={id:saved.id,name:saved.name,color:getColor(ci)};
+    const fbpid=load('fbProjectId');
+    $('fb-project-id').value=fbpid||'we-riding';
+    if(fbpid){
+      loaderTxt('Firebase 연결 중...');
+      $('lov').classList.remove('hidden');
+      const ok=await initFb(fbpid);
+      hideLoader();
+      if(ok){
+        S.fbConn=true;
+        if(!tryJoinPendingRoom()){
+          renderHome();
+          screen('sh');
+        }
+        return;
+      }
+    }
+    screen('s-fbsetup');
+    return;
+  }
+
   hideLoader(); screen('sl');
 }
 
@@ -796,6 +838,16 @@ window.deleteRoom=async function(roomId,fromInside=false){
   }
 };
 window.endRoom=function(){if(S.room) window.deleteRoom(S.room.id,true);};
+
+// ── 초대 링크 대기 방 자동 입장
+function tryJoinPendingRoom(){
+  const roomId=window._pendingRoom;
+  if(!roomId||!S.fbConn||!S.user) return false;
+  window._pendingRoom=null;
+  if(location.search) history.replaceState(null,'',location.pathname);
+  window.joinRoom(roomId);
+  return true;
+}
 
 // ── 방 입장
 window.joinRoom=async function(roomId){
@@ -1119,10 +1171,8 @@ window.doLogout=async function(){
     }catch(e){}
   }
   
-  localStorage.removeItem('pcc_user');
-  localStorage.removeItem('pcc_fbProjectId');
-  localStorage.removeItem('pcc_roomCreated');
-  S.user=null;
+  ['user','ci','fbProjectId'].forEach(k=>localStorage.removeItem('WE_'+k));
+  S.user=null; S.fbConn=false;
   $('ls1').style.display='block';
   $('ls2').style.display='none';
   screen('sl');
