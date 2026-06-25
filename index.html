@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.18</div>
+    <div class="version-info-inline">v1.19</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -455,7 +455,7 @@ async function initFb(projectId) {
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js')
     ]);
-    const [{initializeApp,getApps,getApp},{getDatabase,ref,set,onValue,remove,update}] = await Promise.race([imports,timeout]);
+    const [{initializeApp,getApps,getApp},{getDatabase,ref,set,get,onValue,remove,update}] = await Promise.race([imports,timeout]);
     
     const FB_CONFIG = {
       apiKey: "AIzaSyCMG8XfoKA2xhKvAfvU769Hg8IzE6wYOgI",
@@ -469,7 +469,7 @@ async function initFb(projectId) {
 
     const app = getApps().length ? getApp() : initializeApp(FB_CONFIG);
     db = getDatabase(app);
-    window._fb = {ref,set,onValue,remove,update};
+    window._fb = {ref,set,get,onValue,remove,update};
     return true;
   } catch(e) { console.error('Firebase init error:',e); return false; }
 }
@@ -850,7 +850,23 @@ function tryJoinPendingRoom(){
 window.joinRoom=async function(roomId){
   if(!S.fbConn){toast('Firebase를 확인해주세요');return;}
   if(!S.user){screen('sl');window._pendingRoom=roomId;return;}
-  const {ref,set,onValue}=window._fb;
+  const {ref,set,onValue,get}=window._fb;
+
+  // ✅ 방 존재 여부 먼저 확인
+  try{
+    const snap=await get(ref(db,`rooms/${roomId}`));
+    if(!snap.exists()){
+      toast('❌ 방이 없습니다. 이미 종료된 라이딩이에요.');
+      // 홈 화면으로 이동 (로그인 된 경우)
+      if(S.user){ renderHome(); screen('sh'); }
+      else screen('sl');
+      return;
+    }
+  }catch(e){
+    toast('❌ 방 확인 중 오류가 발생했어요');
+    return;
+  }
+
   await set(ref(db,`rooms/${roomId}/members/${S.user.id}`),{name:S.user.name,color:S.user.color,lat:null,lng:null,speed:0,ts:Date.now()});
   onValue(ref(db,`rooms/${roomId}`),snap=>{if(snap.exists()){const d=snap.val();S.room={...d,id:roomId};S.isOwner=d.ownerId===S.user.id;}},{onlyOnce:true});
   S.room={id:roomId,name:'라이딩',ownerId:''};
