@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.141</div>
+    <div class="version-info-inline">v1.15</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -352,7 +352,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="mctrl">
     <button class="mbtn" onclick="centerMe()">📍</button>
     <button class="mbtn" onclick="fitAll()">👥</button>
-    <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계">⚡</button>
+    <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계" style="opacity:.6">⚡</button>
   </div>
 
   <div class="abar warn" id="ab-behind">
@@ -1022,7 +1022,8 @@ function renderPanel(members,ownerId){
       if(dm>1000){cls='far';lbl=`${d.toFixed(1)}km`;}else if(dm>300)cls='mid';
       gapHtml=`<div class="mgap"><span class="bb ${cls}">${lbl} 뒤</span></div>`;
     }
-    return`<div class="mi">
+    const canFly=!isMe&&m.lat&&m.lng;
+    return`<div class="mi${canFly?' clickable':''}" ${canFly?`onclick="flyTo(${m.lat},${m.lng})"`:''}>
       <div class="rank">${rankTxt}</div>
       <div class="mav" style="background:${m.color||'#888'}">${isOwn?'<span class="crown">👑</span>':''}${(m.name||'?')[0]}</div>
       <div class="md">
@@ -1135,18 +1136,30 @@ window.toggleMemberPanel=function(){
   const hidden=panel.classList.toggle('hidden');
   btn.style.opacity=hidden?'.5':'1';
 };
+window.flyTo=function(lat,lng){
+  if(S.map&&lat&&lng){
+    S.map.flyTo([lat,lng],17,{duration:0.8});
+    toast('📍 이동했어요');
+  }
+};
 window.toggleStats=function(){
   const panel=$('mstats-panel');
   const btn=$('btn-stats-tog');
   const hidden=panel.classList.toggle('hidden');
-  btn.style.opacity=hidden?'.5':'1';
   if(!hidden){
+    // 열림: 버튼 주황색 강조
+    btn.style.background='rgba(255,107,53,.85)';
+    btn.style.opacity='1';
     clearTimeout(window._statsTmr);
     window._statsTmr=setTimeout(()=>{
       panel.classList.add('hidden');
-      btn.style.opacity='.5';
+      btn.style.background='';
+      btn.style.opacity='.6';
     },10000);
   } else {
+    // 닫힘: 버튼 원래대로
+    btn.style.background='';
+    btn.style.opacity='.6';
     clearTimeout(window._statsTmr);
   }
 };
