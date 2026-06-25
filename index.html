@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.17</div>
+    <div class="version-info-inline">v1.18</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -425,13 +425,9 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="ss-bd" onclick="closeSS()"></div>
   <div class="ss-c">
     <div class="ss-t">팀원 초대</div>
-    <div class="ss-d">카카오톡 단체방에 링크를 공유하세요</div>
+    <div class="ss-d">링크를 복사해서 카카오톡 단체방에 공유하세요</div>
     <div class="lbox" id="slink">링크 생성 중...</div>
     <button class="btn-copy" onclick="copyLink()">📋 링크 복사</button>
-    <button class="btn-ksh" onclick="shareKakao()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.74 1.64 5.15 4.14 6.63-.16.58-.59 2.1-.67 2.43-.1.4.14.39.3.28.12-.08 1.95-1.32 2.74-1.86.47.07.96.1 1.49.1 5.523 0 10-3.477 10-7.8S17.523 3 12 3z"/></svg>
-      카카오톡으로 공유
-    </button>
   </div>
 </div>
 
@@ -1133,14 +1129,22 @@ window.openSS=function(){$('ss').classList.add('open');};
 window.closeSS=function(){$('ss').classList.remove('open');};
 window.copyLink=function(){
   const link=$('slink').textContent;
-  if(navigator.clipboard)navigator.clipboard.writeText(link).then(()=>toast('✅ 링크 복사됨!'));
-  else{const ta=document.createElement('textarea');ta.value=link;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ 링크 복사됨!');}
-  window.closeSS();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link).then(()=>{
+      toast('✅ 링크 복사됨! 카카오톡에 붙여넣기 하세요',3500);
+      window.closeSS();
+    });
+  } else {
+    const ta=document.createElement('textarea');
+    ta.value=link;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    toast('✅ 링크 복사됨! 카카오톡에 붙여넣기 하세요',3500);
+    window.closeSS();
+  }
 };
 window.shareKakao=function(){
-  const link=$('slink').textContent;
-  if(navigator.share)navigator.share({title:'WE 라이딩',url:link});else window.copyLink();
-  window.closeSS();
+  // 카카오 SDK 미사용 - 링크 복사로 대체
+  window.copyLink();
 };
 // 팀원 패널 토글 (접기/펼치기)
 window.toggleMemberPanel=function(){
