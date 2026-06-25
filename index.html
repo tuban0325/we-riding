@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.15</div>
+    <div class="version-info-inline">v1.16</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -515,16 +515,20 @@ $('ni').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
 window.doLogin=function(){
   const name=$('ni').value.trim(); if(!name){toast('이름을 입력해주세요');return;}
   const saved=load('user');
-  const id=saved?.id||uid(); // ID는 유지 (색상 일관성)
+  const id=saved?.id||uid();
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
   S.user={id,name,color:getColor(ci)};
-  // 이름은 저장 안 함 (새로고침 시 로그인 화면으로)
-  save('ci',ci); // 색상만 저장
-  console.log('내 사용자 ID:', id);
-  // Firebase ID 설정 화면으로
-  const fbpid=load('fbProjectId')||'we-riding';
-  $('fb-project-id').value=fbpid;
-  screen('s-fbsetup');
+  save('ci',ci);
+  if(S.fbConn){
+    // Firebase 이미 연결 → 홈으로 바로
+    renderHome(); screen('sh');
+    if(window._pendingRoom){joinRoom(window._pendingRoom);window._pendingRoom=null;}
+  } else {
+    // Firebase 연결 필요 → 설정 화면
+    const fbpid=load('fbProjectId')||'we-riding';
+    $('fb-project-id').value=fbpid;
+    screen('s-fbsetup');
+  }
 };
 
 // ── 초기화
@@ -532,16 +536,12 @@ async function init(){
   const params=new URLSearchParams(location.search);
   const rc=params.get('room'); if(rc) window._pendingRoom=rc;
   
-  // 저장된 프로젝트 ID로 자동 연결
-  const fbpid=load('fbProjectId');
-  if(fbpid){
-    loaderTxt('Firebase 연결 중...');
-    const ok=await initFb(fbpid);
-    if(ok) S.fbConn=true;
-  }
-
-  const saved=load('user');
-  // 항상 로그인 화면으로 (새로고침 시 이름 재입력)
+  // 항상 we-riding으로 자동 연결 시도
+  const fbpid=load('fbProjectId')||'we-riding';
+  loaderTxt('Firebase 연결 중...');
+  const ok=await initFb(fbpid);
+  if(ok){ S.fbConn=true; save('fbProjectId',fbpid); }
+  
   hideLoader(); screen('sl');
 }
 
