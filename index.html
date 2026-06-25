@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.15</div>
+    <div class="version-info-inline">v1.16</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -485,6 +485,7 @@ const S = {
   startTime:null, dist:0, elapsed:0,
   statTmr:null, fbConn:false,
   gpxPoints:[], gpxLayer:null,
+  followMe:false,
   dismissed:{behind:false,gpxdev:false},
   gpxAlert:0,
   lastPush:0,
@@ -868,9 +869,10 @@ function initMap(){
   if(typeof L==='undefined'){toast('지도 로딩 중...');return;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;} S.mkrs={};
   const c=$('map'); if(c._leaflet_id) c._leaflet_id=null;
-  const map=L.map(c,{zoomControl:false}).setView([35.8714,128.6014],14);
+  const map=L.map(c,{zoomControl:false}).setView([35.8714,128.6014],16);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
   S.map=map;
+  map.on('dragstart',()=>{S.followMe=false;}); // 드래그 시 자동추적 OFF
   setTimeout(()=>{try{map.invalidateSize();}catch(e){}},150);
 }
 function drawGpx(){
@@ -970,8 +972,13 @@ function onPos(lat,lng,gspd,roomId){
   $('s-dst').textContent=S.dist.toFixed(2);
   if(!S.myMkr){
     S.myMkr=L.marker([lat,lng],{icon:mkrIcon(S.user.name,S.user.color,true),zIndexOffset:1000}).addTo(S.map);
-    S.map.setView([lat,lng],15);
-  } else S.myMkr.setLatLng([lat,lng]);
+    S.map.setView([lat,lng],16);
+    S.followMe=true; // 첫 수신 시 자동 추적 ON
+  } else {
+    S.myMkr.setLatLng([lat,lng]);
+    // 자동 추적 ON이면 지도 중앙 유지
+    if(S.followMe) S.map.panTo([lat,lng],{animate:true,duration:1});
+  }
   const now=Date.now();
   if(now-S.lastPush>3000){S.lastPush=now;pushPos(lat,lng,S.mySpeed,roomId);}
   // GPX 이탈 체크 (방장 + 알림 ON 상태만)
@@ -1022,7 +1029,7 @@ function renderPanel(members,ownerId){
       if(dm>1000){cls='far';lbl=`${d.toFixed(1)}km`;}else if(dm>300)cls='mid';
       gapHtml=`<div class="mgap"><span class="bb ${cls}">${lbl} 뒤</span></div>`;
     }
-    const canFly=!isMe&&m.lat&&m.lng;
+    const canFly=m.lat&&m.lng; // 본인 포함 누구나 클릭 가능
     return`<div class="mi${canFly?' clickable':''}" ${canFly?`onclick="flyTo(${m.lat},${m.lng})"`:''}>
       <div class="rank">${rankTxt}</div>
       <div class="mav" style="background:${m.color||'#888'}">${isOwn?'<span class="crown">👑</span>':''}${(m.name||'?')[0]}</div>
@@ -1063,7 +1070,13 @@ function autoHideAlert(id,key,ms=10000){
   },ms);
 }
 
-window.centerMe=function(){if(S.myPos&&S.map)S.map.setView([S.myPos.lat,S.myPos.lng],15,{animate:true});else toast('내 위치 수신 중...');};
+window.centerMe=function(){
+  if(S.myPos&&S.map){
+    S.followMe=true;
+    S.map.setView([S.myPos.lat,S.myPos.lng],S.map.getZoom(),{animate:true});
+    toast('📍 내 위치 추적 중');
+  } else toast('내 위치 수신 중...');
+};
 window.fitAll=function(){
   const pts=[...(S.myPos?[[S.myPos.lat,S.myPos.lng]]:[]),...Object.values(S.mkrs).map(m=>[m.getLatLng().lat,m.getLatLng().lng])];
   if(pts.length>1)S.map.fitBounds(pts,{padding:[60,60]});else window.centerMe();
@@ -1109,7 +1122,7 @@ window.leaveRoom=async function(forced=false){
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
   $('ab-gpxdev').classList.remove('show');
-  S.gpxPoints=[];S.gpxAlert=0;
+  S.gpxPoints=[];S.gpxAlert=0;S.followMe=false;
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
   S.room=null;S.isOwner=false;
@@ -1138,7 +1151,8 @@ window.toggleMemberPanel=function(){
 };
 window.flyTo=function(lat,lng){
   if(S.map&&lat&&lng){
-    S.map.flyTo([lat,lng],17,{duration:0.8});
+    S.followMe=false; // 팀원 위치로 이동 시 자동추적 OFF
+    S.map.flyTo([lat,lng],S.map.getZoom(),{duration:0.8});
     toast('📍 이동했어요');
   }
 };
