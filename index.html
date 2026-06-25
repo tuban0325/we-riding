@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.18</div>
+    <div class="version-info-inline">v1.14</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -341,9 +341,18 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     </div>
   </div>
 
+  <!-- 속도계 (⚡ 토글, 버튼 왼쪽에 가로 표시) -->
+  <div class="mstats hidden" id="mstats-panel">
+    <div class="srow">
+      <div class="sc"><div class="sv" id="s-spd">0.0</div><div class="su">km/h</div></div>
+      <div class="sc"><div class="sv" id="s-dst">0.00</div><div class="su">km</div></div>
+      <div class="sc"><div class="sv" id="s-tm">00:00</div><div class="su">경과</div></div>
+    </div>
+  </div>
   <div class="mctrl">
     <button class="mbtn" onclick="centerMe()">📍</button>
     <button class="mbtn" onclick="fitAll()">👥</button>
+    <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계">⚡</button>
   </div>
 
   <div class="abar warn" id="ab-behind">
@@ -523,35 +532,16 @@ window.doLogin=function(){
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
   S.user={id,name,color:getColor(ci)};
   save('ci',ci);
-  if(S.fbConn){
-    // Firebase 이미 연결 → 홈으로 바로
-    renderHome(); screen('sh');
-    if(window._pendingRoom){joinRoom(window._pendingRoom);window._pendingRoom=null;}
-  } else {
-    // Firebase 연결 필요 → 설정 화면
-    const fbpid=load('fbProjectId')||'we-riding';
-    $('fb-project-id').value=fbpid;
-    screen('s-fbsetup');
-  }
+  const fbpid=load('fbProjectId')||'we-riding';
+  $('fb-project-id').value=fbpid;
+  screen('s-fbsetup');
 };
 
 // ── 초기화
 async function init(){
-  try{
-    const params=new URLSearchParams(location.search);
-    const rc=params.get('room'); if(rc) window._pendingRoom=rc;
-    
-    loaderTxt('Firebase 연결 중...');
-    const fbpid=load('fbProjectId')||'we-riding';
-    const ok=await initFb(fbpid);
-    if(ok){ S.fbConn=true; save('fbProjectId',fbpid); }
-  }catch(e){
-    console.error('init error:',e);
-  }finally{
-    // 반드시 로더 숨기고 로그인 화면으로
-    hideLoader();
-    screen('sl');
-  }
+  const params=new URLSearchParams(location.search);
+  const rc=params.get('room'); if(rc) window._pendingRoom=rc;
+  hideLoader(); screen('sl');
 }
 
 // ── 홈
@@ -818,8 +808,6 @@ window.joinRoom=async function(roomId){
   screen('sr');
   $('rnm').textContent=S.room.name;
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
-  requestWakeLock();
-  toast('📱 화면을 닫지 마세요! GPS가 중단됩니다',4000);
   setTimeout(()=>{initMap();drawGpx();startTracking(roomId);startSync(roomId);},80);
 };
 
@@ -968,10 +956,7 @@ function renderPanel(members,ownerId){
   updateLeaderCard(leadM,leadIsMe);
   const medals=['🥇','🥈','🥉'];
   el.innerHTML=sorted.map(([uid,m],i)=>{
-    const isMe=uid===S.user.id,isOwn=uid===ownerId;
-    const staleSec=Math.floor((now-(m.ts||0))/1000);
-    const stale=staleSec>20;
-    const staleLabel=stale?(staleSec<60?`${staleSec}초`:`${Math.floor(staleSec/60)}분`):'';
+    const isMe=uid===S.user.id,isOwn=uid===ownerId,stale=now-(m.ts||0)>20000;
     const rankTxt=i<3?medals[i]:`${i+1}`;
     let gapHtml='';
     if(!isMe&&mLat&&mLng&&m.lat&&m.lng){
@@ -985,12 +970,11 @@ function renderPanel(members,ownerId){
       if(dm>1000){cls='far';lbl=`${d.toFixed(1)}km`;}else if(dm>300)cls='mid';
       gapHtml=`<div class="mgap"><span class="bb ${cls}">${lbl} 뒤</span></div>`;
     }
-    const clickFn=(!isMe&&m.lat&&m.lng)?`onclick="flyToMember(${m.lat},${m.lng})"`:"";
-    return`<div class="mi" ${clickFn} style="${!isMe&&m.lat?'cursor:pointer':''}">
+    return`<div class="mi">
       <div class="rank">${rankTxt}</div>
       <div class="mav" style="background:${m.color||'#888'}">${isOwn?'<span class="crown">👑</span>':''}${(m.name||'?')[0]}</div>
       <div class="md">
-        <div class="mnrow"><span class="mn">${m.name}${stale?'<span style="font-size:9px;color:#e74c3c"> ⚫'+staleLabel+'</span>':''}</span>${isMe?'<span class="mybadge">나</span>':''}</div>
+        <div class="mnrow"><span class="mn">${m.name}${stale?' 🔴':''}</span>${isMe?'<span class="mybadge">나</span>':''}</div>
         <div class="mspd">속도 <span>${(m.speed||0).toFixed(1)} km/h</span></div>
       </div>${gapHtml}
     </div>`;
@@ -1069,7 +1053,6 @@ window.leaveRoom=async function(forced=false){
   }
   
   if(roomListener){roomListener();roomListener=null;}
-  releaseWakeLock();
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
   $('ab-gpxdev').classList.remove('show');
@@ -1100,35 +1083,22 @@ window.toggleMemberPanel=function(){
   const hidden=panel.classList.toggle('hidden');
   btn.style.opacity=hidden?'.5':'1';
 };
-// ══ WakeLock (화면 꺼짐 방지)
-let _wakeLock=null;
-async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      _wakeLock=await navigator.wakeLock.request('screen');
-      console.log('✅ WakeLock 활성화');
-      document.addEventListener('visibilitychange',async()=>{
-        if(_wakeLock&&document.visibilityState==='visible'){
-          _wakeLock=await navigator.wakeLock.request('screen');
-        }
-      });
-    }
-  }catch(e){console.log('WakeLock 불가:',e);}
-}
-function releaseWakeLock(){
-  if(_wakeLock){_wakeLock.release();_wakeLock=null;console.log('WakeLock 해제');}
-}
-
-// ══ 팀원 위치로 지도 이동
-window.flyToMember=function(lat,lng){
-  if(S.map&&lat&&lng){
-    S.map.flyTo([lat,lng],17,{duration:1});
-    toast('📍 이동했어요');
+window.toggleStats=function(){
+  const panel=$('mstats-panel');
+  const btn=$('btn-stats-tog');
+  const hidden=panel.classList.toggle('hidden');
+  btn.style.opacity=hidden?'.5':'1';
+  if(!hidden){
+    clearTimeout(window._statsTmr);
+    window._statsTmr=setTimeout(()=>{
+      panel.classList.add('hidden');
+      btn.style.opacity='.5';
+    },10000);
+  } else {
+    clearTimeout(window._statsTmr);
   }
 };
-
-// ══ toggleStats 비활성화 (⚡ 제거)
-window.toggleStats=function(){};
+window.showMemberModal=function(){window.toggleMemberPanel();};
 window.closeMemberModal=function(){
   $('mm-overlay').classList.remove('show');
 };
