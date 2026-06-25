@@ -175,7 +175,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .lc-title .lc-leader-name{display:inline;font-size:11px;color:var(--orange);font-weight:700;letter-spacing:0;text-transform:none}
 
 /* 통계 */
-.mstats{position:absolute;right:60px;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);z-index:1004;pointer-events:none;transition:opacity .25s,transform .25s}
+.mstats{position:absolute;right:60px;bottom:calc(env(safe-area-inset-bottom, 0px) + 30px);z-index:1004;pointer-events:none;transition:opacity .25s,transform .25s}
 .mstats.hidden{opacity:0;pointer-events:none;transform:translateY(10px)}
 .srow{display:flex;flex-direction:row;gap:6px}
 .sc{background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:10px;padding:7px 10px;text-align:center}
@@ -183,7 +183,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .su{font-size:10px;color:var(--g300);font-weight:500}
 
 /* 지도 버튼 */
-.mctrl{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);z-index:1002;display:flex;flex-direction:column;gap:8px}
+.mctrl{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 30px);z-index:1002;display:flex;flex-direction:column;gap:8px}
 .mbtn{width:40px;height:40px;border-radius:10px;background:rgba(26,26,24,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mbtn:active{background:rgba(255,107,53,.6)}
 .mbtn-tm{height:52px;flex-direction:column;gap:0;background:rgba(26,26,24,.95)}
@@ -201,7 +201,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:220px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s}
+.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 30px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:220px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s}
 .mp.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
 .mpt{font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;flex-shrink:0}
 .sort-hint{display:none}
@@ -238,6 +238,33 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-copy:active{background:var(--od)}
 .btn-ksh{width:100%;padding:14px;background:#FEE500;color:#191600;font-family:var(--font);font-size:15px;font-weight:700;border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 
+/* 코스 정보 모달 */
+.ci-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:2200;display:none;align-items:flex-end;justify-content:center}
+.ci-overlay.show{display:flex}
+.ci-modal{background:#1a1a18;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.ci-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+.ci-title{font-size:16px;font-weight:700;color:#fff}
+.ci-close{background:none;border:none;font-size:22px;cursor:pointer;color:#888}
+.ci-body{overflow-y:auto;flex:1;padding:16px 20px 32px}
+.ci-section{margin-bottom:20px}
+.ci-sec-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.ci-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.ci-stat{background:rgba(255,255,255,.06);border-radius:10px;padding:12px}
+.ci-stat-val{font-size:22px;font-weight:700;color:#fff;line-height:1;margin-bottom:3px}
+.ci-stat-lbl{font-size:11px;color:#888}
+.ci-stat.accent .ci-stat-val{color:var(--orange)}
+.ci-pt-list{display:flex;flex-direction:column;gap:6px}
+.ci-pt{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px}
+.ci-pt-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}
+.ci-pt-info{flex:1;min-width:0}
+.ci-pt-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:1px}
+.ci-pt-dist{font-size:11px;color:#888}
+.ci-grade-bar{margin-top:8px}
+.ci-grade-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ci-grade-lbl{font-size:11px;color:#ccc;width:80px;flex-shrink:0}
+.ci-grade-track{flex:1;background:rgba(255,255,255,.1);border-radius:4px;height:8px;overflow:hidden}
+.ci-grade-fill{height:100%;border-radius:4px;transition:width .4s}
+.ci-grade-pct{font-size:11px;color:#888;width:32px;text-align:right;flex-shrink:0}
 /* 공통 */
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(26,26,24,.92);backdrop-filter:blur(8px);color:#fff;font-size:14px;font-weight:500;padding:12px 20px;border-radius:24px;z-index:9999;opacity:0;transition:all .25s ease;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -261,7 +288,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.222</div>
+    <div class="version-info-inline">v1.23</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -350,6 +377,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     </div>
   </div>
   <div class="mctrl">
+    <button class="mbtn" id="btn-course-info" onclick="openCourseInfo()" title="코스 정보" style="opacity:.3;display:none">📊</button>
     <button class="mbtn" onclick="centerMe()">📍</button>
     <button class="mbtn" onclick="fitAll()">👥</button>
     <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계" style="opacity:.6">⚡</button>
@@ -371,6 +399,19 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="mp" id="mp-panel">
     <div class="mpt">팀원 현황</div>
     <div class="mlist" id="mlist"></div>
+  </div>
+</div>
+
+<!-- ══ 코스 정보 모달 ══ -->
+<div class="ci-overlay" id="ci-overlay" onclick="if(event.target===this)closeCourseInfo()">
+  <div class="ci-modal">
+    <div class="ci-header">
+      <div class="ci-title">📊 코스 정보</div>
+      <button class="ci-close" onclick="closeCourseInfo()">✕</button>
+    </div>
+    <div class="ci-body" id="ci-body">
+      <div style="text-align:center;color:#888;padding:40px 0">GPX 파일을 등록하면 코스 정보를 볼 수 있어요</div>
+    </div>
   </div>
 </div>
 
@@ -480,7 +521,7 @@ const S = {
   watchId:null, myPos:null, mySpeed:0,
   startTime:null, dist:0, elapsed:0,
   statTmr:null, fbConn:false,
-  gpxPoints:[], gpxLayer:null,
+  gpxPoints:[], gpxLayer:null, courseStats:null,
   followMe:false,
   dismissed:{behind:false,gpxdev:false},
   gpxAlert:0,
@@ -652,6 +693,8 @@ function updateGpxModalUI(){
   $('gpxm-name').textContent=hasGpx?`코스 ${S.gpxPoints.length}개 포인트`:'GPX 파일 없음';
   $('gpxm-desc').textContent=hasGpx?'코스가 지도에 표시됩니다':'업로드하면 코스가 지도에 표시됩니다';
   $('btn-gpx-hud').classList.toggle('active',hasGpx);
+  const ciBtn=$('btn-course-info');
+  if(ciBtn){ciBtn.style.display=hasGpx?'flex':'none';ciBtn.style.opacity=hasGpx?'1':'.3';}
   if(S.isOwner){
     $('gpxm-del-btn').style.display=hasGpx?'block':'none';
   }
@@ -686,13 +729,21 @@ window.loadGpxInRoom=function(input){
       const xml=new DOMParser().parseFromString(e.target.result,'text/xml');
       const pts=xml.querySelectorAll('trkpt');
       if(!pts.length){toast('경로 데이터가 없어요');return;}
-      const points=Array.from(pts).map(p=>({lat:parseFloat(p.getAttribute('lat')),lng:parseFloat(p.getAttribute('lon'))}));
+      const points=Array.from(pts).map(p=>{
+        const ele=p.querySelector('ele');
+        return {
+          lat:parseFloat(p.getAttribute('lat')),
+          lng:parseFloat(p.getAttribute('lon')),
+          ele:ele?parseFloat(ele.textContent):null
+        };
+      });
       // Firebase에 저장 → 팀원 모두 공유
       if(S.fbConn&&S.room&&window._fb){
         const {ref,set}=window._fb;
         await set(ref(db,`rooms/${S.room.id}/gpx`),points);
       }
       S.gpxPoints=points;
+      buildCourseStats(); // 코스 통계 계산
       drawGpx();
       updateGpxModalUI();
       input.value='';
@@ -712,6 +763,9 @@ window.deleteGpxInRoom=async function(){
   }
   S.gpxPoints=[];
   S.gpxAlert=0;
+  S.courseStats=null;
+  const ciBtn=$('btn-course-info');
+  if(ciBtn) ciBtn.style.display='none';
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   updateGpxModalUI();
   toast('코스가 삭제됐어요');
@@ -997,6 +1051,7 @@ function startSync(roomId){
     // GPX Firebase 동기화 (팀원에게도 코스 공유)
     if(data.gpx&&Array.isArray(data.gpx)&&data.gpx.length!==S.gpxPoints.length){
       S.gpxPoints=data.gpx;
+      buildCourseStats();
       drawGpx();
       updateGpxModalUI();
     } else if(!data.gpx&&S.gpxPoints.length>0){
@@ -1284,6 +1339,139 @@ window.flyTo=function(lat,lng){
     toast('📍 이동했어요');
   }
 };
+// ── 코스 통계 계산
+function buildCourseStats(){
+  const pts=S.gpxPoints;
+  if(!pts||!pts.length){S.courseStats=null;return;}
+  const n=pts.length;
+  let totalDist=0;
+  const cumDist=[0];
+  for(let i=1;i<n;i++){
+    totalDist+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
+    cumDist.push(totalDist);
+  }
+  // 고도 분석
+  const hasEle=pts.some(p=>p.ele!=null);
+  let totalUp=0,totalDown=0;
+  let gradeFlat=0,gradeMid=0,gradeSteep=0; // 구간 km
+  if(hasEle){
+    for(let i=1;i<n;i++){
+      const dh=(pts[i].ele||0)-(pts[i-1].ele||0);
+      if(dh>0) totalUp+=dh;
+      else totalDown+=Math.abs(dh);
+      const segDist=cumDist[i]-cumDist[i-1];
+      if(segDist>0){
+        const grade=Math.abs(dh)/(segDist*1000)*100;
+        if(grade<3) gradeFlat+=segDist;
+        else if(grade<7) gradeMid+=segDist;
+        else gradeSteep+=segDist;
+      }
+    }
+  }
+  // 주요 포인트 (출발/25%/반환/75%/도착)
+  const keyPoints=[];
+  const ratios=[0,0.25,0.5,0.75,1.0];
+  const labels=['🚦 출발점','📍 25% 지점','🔄 반환점','📍 75% 지점','🏁 도착점'];
+  ratios.forEach((r,i)=>{
+    const targetDist=totalDist*r;
+    let idx=0;
+    for(let j=0;j<n;j++){if(cumDist[j]>=targetDist){idx=j;break;}}
+    if(r===1) idx=n-1;
+    keyPoints.push({
+      label:labels[i],
+      lat:pts[idx].lat, lng:pts[idx].lng,
+      dist:cumDist[idx],
+      ele:pts[idx].ele
+    });
+  });
+  S.courseStats={
+    totalDist, totalUp:Math.round(totalUp), totalDown:Math.round(totalDown),
+    hasEle, gradeFlat, gradeMid, gradeSteep,
+    pointCount:n, keyPoints
+  };
+}
+
+// ── 코스 정보 모달 열기
+window.openCourseInfo=function(){
+  if(!S.courseStats){toast('GPX 파일을 먼저 등록해주세요');return;}
+  const st=S.courseStats;
+  const body=$('ci-body');
+  const fmtDist=d=>d>=1?`${d.toFixed(1)} km`:`${Math.round(d*1000)} m`;
+
+  // 전체 통계
+  let statsHtml=`
+  <div class="ci-section">
+    <div class="ci-sec-title">전체 요약</div>
+    <div class="ci-stats">
+      <div class="ci-stat accent">
+        <div class="ci-stat-val">${st.totalDist.toFixed(1)}</div>
+        <div class="ci-stat-lbl">총 거리 (km)</div>
+      </div>
+      <div class="ci-stat">
+        <div class="ci-stat-val">${st.pointCount.toLocaleString()}</div>
+        <div class="ci-stat-lbl">총 포인트 수</div>
+      </div>`;
+  if(st.hasEle){
+    statsHtml+=`
+      <div class="ci-stat">
+        <div class="ci-stat-val" style="color:#2ECC71">▲ ${st.totalUp.toLocaleString()}</div>
+        <div class="ci-stat-lbl">총 상승 (m)</div>
+      </div>
+      <div class="ci-stat">
+        <div class="ci-stat-val" style="color:#E74C3C">▼ ${st.totalDown.toLocaleString()}</div>
+        <div class="ci-stat-lbl">총 하강 (m)</div>
+      </div>`;
+  }
+  statsHtml+=`</div></div>`;
+
+  // 주요 포인트
+  let ptHtml=`<div class="ci-section"><div class="ci-sec-title">주요 포인트</div><div class="ci-pt-list">`;
+  st.keyPoints.forEach(p=>{
+    const eleStr=p.ele!=null?` · 고도 ${Math.round(p.ele)}m`:'';
+    ptHtml+=`<div class="ci-pt" onclick="closeCourseInfo();flyTo(${p.lat},${p.lng})" style="cursor:pointer">
+      <div class="ci-pt-icon">${p.label.split(' ')[0]}</div>
+      <div class="ci-pt-info">
+        <div class="ci-pt-name">${p.label.replace(/^\S+\s/,'')}</div>
+        <div class="ci-pt-dist">출발점에서 ${fmtDist(p.dist)}${eleStr}</div>
+      </div>
+    </div>`;
+  });
+  ptHtml+=`</div></div>`;
+
+  // 경사도 분포 (고도 있을 때만)
+  let gradeHtml='';
+  if(st.hasEle){
+    const tot=st.gradeFlat+st.gradeMid+st.gradeSteep||1;
+    const fPct=Math.round(st.gradeFlat/tot*100);
+    const mPct=Math.round(st.gradeMid/tot*100);
+    const sPct=Math.round(st.gradeSteep/tot*100);
+    gradeHtml=`<div class="ci-section">
+      <div class="ci-sec-title">경사도 분포</div>
+      <div class="ci-grade-bar">
+        <div class="ci-grade-row">
+          <div class="ci-grade-lbl">완만 (0~3%)</div>
+          <div class="ci-grade-track"><div class="ci-grade-fill" style="width:${fPct}%;background:#2ECC71"></div></div>
+          <div class="ci-grade-pct">${fPct}%</div>
+        </div>
+        <div class="ci-grade-row">
+          <div class="ci-grade-lbl">보통 (3~7%)</div>
+          <div class="ci-grade-track"><div class="ci-grade-fill" style="width:${mPct}%;background:#F59E0B"></div></div>
+          <div class="ci-grade-pct">${mPct}%</div>
+        </div>
+        <div class="ci-grade-row">
+          <div class="ci-grade-lbl">급경사 (7%+)</div>
+          <div class="ci-grade-track"><div class="ci-grade-fill" style="width:${sPct}%;background:#E74C3C"></div></div>
+          <div class="ci-grade-pct">${sPct}%</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  body.innerHTML=statsHtml+ptHtml+gradeHtml;
+  $('ci-overlay').classList.add('show');
+};
+window.closeCourseInfo=function(){$('ci-overlay').classList.remove('show');};
+
 window.toggleStats=function(){
   const panel=$('mstats-panel');
   const btn=$('btn-stats-tog');
