@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.21</div>
+    <div class="version-info-inline">v1.22</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -1014,7 +1014,7 @@ function startSync(roomId){
       const dev=data.gpxDeviation;
       const el=$('ab-gpxdev');
       if(dev.uid!==S.user.id && dev.ts && Date.now()-dev.ts<10000 && !S.dismissed.gpxdev){
-        el.querySelector('.abtxt').textContent=`📍 ${dev.name}님이 코스를 벗어났어요!`;
+        el.querySelector('.abtxt').textContent=`${dev.name}님이 코스를 벗어났어요!`;
         el.classList.add('show');
         S.dismissed.gpxdev=true;
         setTimeout(()=>{S.dismissed.gpxdev=false; el.querySelector('.abtxt').textContent='코스를 벗어났어요! 경로를 확인하세요.';},60000);
@@ -1178,7 +1178,7 @@ function checkBehind(members){
   if(S.dismissed.behind||!S.myPos) return;
   const behinds=Object.entries(members).filter(([uid,m])=>uid!==S.user.id&&m.lat&&m.lng&&hav(S.myPos.lat,S.myPos.lng,m.lat,m.lng)>0.5).map(([,m])=>m.name);
   const el=$('ab-behind');
-  if(behinds.length){$('ab-behind-txt').textContent=`⚠️ ${behinds.join(', ')}님이 500m 이상 뒤처지고 있어요.`;el.classList.add('show');autoHideAlert('ab-behind','behind');}
+  if(behinds.length){$('ab-behind-txt').textContent=`${behinds.join(', ')}님이 500m 이상 뒤처지고 있어요.`;el.classList.add('show');autoHideAlert('ab-behind','behind');}
   else{el.classList.remove('show');S.dismissed.behind=false;}
 }
 window.dismissAlert=function(id,key){$(id).classList.remove('show');S.dismissed[key]=true;setTimeout(()=>{S.dismissed[key]=false;},60000);};
