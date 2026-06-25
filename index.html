@@ -261,7 +261,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.20</div>
+    <div class="version-info-inline">v1.21</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -728,9 +728,33 @@ function distToGpx(lat,lng){
   for(const p of S.gpxPoints){
     const d=hav(lat,lng,p.lat,p.lng);
     if(d<minD) minD=d;
-    if(minD<0.03) break; // 30m 이내면 충분
+    if(minD<0.03) break;
   }
   return minD;
+}
+
+// GPX 경로상 진행 거리 계산 (출발점 기준 누적 km)
+function gpxProgress(lat,lng){
+  if(!S.gpxPoints||!S.gpxPoints.length) return -1;
+  let minD=999, minIdx=0;
+  for(let i=0;i<S.gpxPoints.length;i++){
+    const d=hav(lat,lng,S.gpxPoints[i].lat,S.gpxPoints[i].lng);
+    if(d<minD){minD=d;minIdx=i;}
+  }
+  // 출발점~가장 가까운 포인트까지 누적 거리
+  let acc=0;
+  for(let i=1;i<=minIdx;i++){
+    acc+=hav(S.gpxPoints[i-1].lat,S.gpxPoints[i-1].lng,S.gpxPoints[i].lat,S.gpxPoints[i].lng);
+  }
+  return acc; // km
+}
+
+// GPX 경로상 두 위치의 진행 거리 차이 (km)
+function gpxDistBetween(lat1,lng1,lat2,lng2){
+  const p1=gpxProgress(lat1,lng1);
+  const p2=gpxProgress(lat2,lng2);
+  if(p1<0||p2<0) return null;
+  return Math.abs(p1-p2);
 }
 
 // ── GPX 이탈 알림 (mode별 분기)
@@ -889,8 +913,65 @@ function initMap(){
 }
 function drawGpx(){
   if(!S.gpxPoints.length||!S.map) return;
+  // 기존 레이어 제거
   if(S.gpxLayer){try{S.map.removeLayer(S.gpxLayer);}catch(e){}}
+  if(S._gpxMarkers){S._gpxMarkers.forEach(m=>{try{S.map.removeLayer(m);}catch(e){}});S._gpxMarkers=[];}
+  S._gpxMarkers=[];
+
+  // 경로 그리기
   S.gpxLayer=L.polyline(S.gpxPoints.map(p=>[p.lat,p.lng]),{color:'#1565C0',weight:4,opacity:.9,dashArray:'6 4'}).addTo(S.map);
+
+  const pts=S.gpxPoints;
+  const n=pts.length;
+
+  // 전체 경로 거리 계산
+  let totalDist=0;
+  const cumDist=[0];
+  for(let i=1;i<n;i++){
+    totalDist+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
+    cumDist.push(totalDist);
+  }
+
+  // 포인트 마커 생성 함수
+  function gpxMkr(lat,lng,emoji,label,color='#1565C0'){
+    const html=`<div style="background:${color};color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)" title="${label}">${emoji}</div>`;
+    const icon=L.divIcon({html,className:'',iconSize:[28,28],iconAnchor:[14,14]});
+    const mk=L.marker([lat,lng],{icon}).addTo(S.map);
+    mk.bindTooltip(label,{permanent:false,direction:'top',offset:[0,-14]});
+    S._gpxMarkers.push(mk);
+  }
+
+  // 출발점 🟢
+  gpxMkr(pts[0].lat,pts[0].lng,'🚦','출발점','#2ECC71');
+
+  // 도착점 🏁 (출발점과 다를 때만)
+  const lastPt=pts[n-1];
+  const startEndDist=hav(pts[0].lat,pts[0].lng,lastPt.lat,lastPt.lng);
+  if(startEndDist>0.1){
+    gpxMkr(lastPt.lat,lastPt.lng,'🏁','도착점','#E74C3C');
+  }
+
+  // 반환점: 전체 거리의 50% 지점
+  const halfDist=totalDist/2;
+  let turnIdx=0;
+  for(let i=0;i<n;i++){if(cumDist[i]>=halfDist){turnIdx=i;break;}}
+  // 출발/도착과 너무 가깝지 않으면 표시
+  if(turnIdx>5&&turnIdx<n-5){
+    gpxMkr(pts[turnIdx].lat,pts[turnIdx].lng,'🔄','반환점','#F59E0B');
+  }
+
+  // 주요 포인트: 25%, 75% 지점
+  const checkpoints=[0.25,0.75];
+  checkpoints.forEach((ratio,ci)=>{
+    const targetDist=totalDist*ratio;
+    let idx=0;
+    for(let i=0;i<n;i++){if(cumDist[i]>=targetDist){idx=i;break;}}
+    if(idx>5&&idx<n-5&&Math.abs(idx-turnIdx)>5){
+      const km=(cumDist[idx]).toFixed(1);
+      gpxMkr(pts[idx].lat,pts[idx].lng,'📍',`${km}km 지점`,'#8B5CF6');
+    }
+  });
+
   S.map.fitBounds(S.gpxLayer.getBounds(),{padding:[40,40]});
 }
 
@@ -1020,25 +1101,48 @@ function renderPanel(members,ownerId){
   const el=$('mlist');
   const mLat=S.myPos?.lat,mLng=S.myPos?.lng;
   const now=Date.now();
-  const sorted=Object.entries(members).filter(([,m])=>m.lat&&m.lng).sort(([,a],[,b])=>(b.speed||0)-(a.speed||0));
-  if(!sorted.length){el.innerHTML=`<div style="color:#888;font-size:13px;text-align:center;padding:12px 0">GPS 수신 중...</div>`;updateLeaderCard(null,null);return;}
+  const hasGpx=S.gpxPoints&&S.gpxPoints.length>0;
+  // GPX 있으면 경로 진행 거리 기준 정렬, 없으면 속도 기준
+  const sorted=Object.entries(members).filter(([,m])=>m.lat&&m.lng).sort(([,a],[,b])=>{
+    if(hasGpx){
+      const pa=gpxProgress(a.lat,a.lng), pb=gpxProgress(b.lat,b.lng);
+      return pb-pa; // 더 많이 진행한 사람이 선두
+    }
+    return (b.speed||0)-(a.speed||0);
+  });
+  if(!sorted.length){el.innerHTML=`<div style="color:#888;font-size:13px;text-align:center;padding:12px 0">GPS 수신 중...</div>`;updateLeaderCard(null,null,hasGpx);return;}
   const [leadId,leadM]=sorted[0];
   const leadIsMe=leadId===S.user.id;
-  updateLeaderCard(leadM,leadIsMe);
+  updateLeaderCard(leadM,leadIsMe,hasGpx);
   const medals=['🥇','🥈','🥉'];
   el.innerHTML=sorted.map(([uid,m],i)=>{
     const isMe=uid===S.user.id,isOwn=uid===ownerId,stale=now-(m.ts||0)>20000;
     const rankTxt=i<3?medals[i]:`${i+1}`;
     let gapHtml='';
     if(!isMe&&mLat&&mLng&&m.lat&&m.lng){
-      const d=hav(mLat,mLng,m.lat,m.lng),dm=Math.round(d*1000);
-      let cls='close',lbl=`${dm}m`;
-      if(dm>1000){cls='far';lbl=`${d.toFixed(1)}km`;}else if(dm>300)cls='mid';
+      let d,dm,lbl,cls='close';
+      if(hasGpx){
+        // GPX 경로상 거리
+        const gpxD=gpxDistBetween(mLat,mLng,m.lat,m.lng);
+        d=gpxD!==null?gpxD:hav(mLat,mLng,m.lat,m.lng);
+      } else {
+        d=hav(mLat,mLng,m.lat,m.lng);
+      }
+      dm=Math.round(d*1000);
+      lbl=dm>1000?`${d.toFixed(1)}km`:`${dm}m`;
+      if(dm>1000)cls='far';else if(dm>300)cls='mid';
       gapHtml=`<div class="mgap"><span class="bb ${cls}">${lbl}</span></div>`;
     } else if(isMe&&!leadIsMe&&leadM.lat&&mLat){
-      const d=hav(mLat,mLng,leadM.lat,leadM.lng),dm=Math.round(d*1000);
-      let cls='close',lbl=`${dm}m`;
-      if(dm>1000){cls='far';lbl=`${d.toFixed(1)}km`;}else if(dm>300)cls='mid';
+      let d;
+      if(hasGpx){
+        const gpxD=gpxDistBetween(mLat,mLng,leadM.lat,leadM.lng);
+        d=gpxD!==null?gpxD:hav(mLat,mLng,leadM.lat,leadM.lng);
+      } else {
+        d=hav(mLat,mLng,leadM.lat,leadM.lng);
+      }
+      const dm=Math.round(d*1000);
+      let cls='close',lbl=dm>1000?`${d.toFixed(1)}km`:`${dm}m`;
+      if(dm>1000)cls='far';else if(dm>300)cls='mid';
       gapHtml=`<div class="mgap"><span class="bb ${cls}">${lbl} 뒤</span></div>`;
     }
     const canFly=m.lat&&m.lng; // 본인 포함 누구나 클릭 가능
@@ -1053,10 +1157,13 @@ function renderPanel(members,ownerId){
   }).join('');
 }
 
-function updateLeaderCard(lead,leadIsMe){
+function updateLeaderCard(lead,leadIsMe,hasGpx=false){
   const card=$('leader-card');
-  if(!lead||leadIsMe||!S.myPos||!lead.lat){card.classList.remove('show');return;}
-  const dist=hav(S.myPos.lat,S.myPos.lng,lead.lat,lead.lng);
+  // GPX 없으면 선두 카드 숨김 (순위 기준 없음)
+  if(!hasGpx||!lead||leadIsMe||!S.myPos||!lead.lat){card.classList.remove('show');return;}
+  // GPX 있을 때: 경로상 거리
+  const gpxD=gpxDistBetween(S.myPos.lat,S.myPos.lng,lead.lat,lead.lng);
+  const dist=gpxD!==null?gpxD:hav(S.myPos.lat,S.myPos.lng,lead.lat,lead.lng);
   const spdDiff=Math.max(0,(lead.speed||0)-S.mySpeed);
   const etaTxt=spdDiff>0.5?(dist/spdDiff*60>99?'>99':(dist/spdDiff*60).toFixed(0)):'-';
   if(dist<1){$('lc-dist').textContent=`${Math.round(dist*1000)}`;$('lc-dist-unit').textContent='m 뒤';}
@@ -1135,6 +1242,7 @@ window.leaveRoom=async function(forced=false){
   $('ab-behind').classList.remove('show');
   $('ab-gpxdev').classList.remove('show');
   S.gpxPoints=[];S.gpxAlert=0;S.followMe=false;
+  if(S._gpxMarkers){S._gpxMarkers.forEach(m=>{try{S.map?.removeLayer(m);}catch(e){}});S._gpxMarkers=[];}
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
   S.room=null;S.isOwner=false;
