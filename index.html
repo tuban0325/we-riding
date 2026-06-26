@@ -292,7 +292,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작→</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 표시돼요</div>
-    <div class="version-info-inline">v1.34</div>
+    <div class="version-info-inline">v1.35</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -487,8 +487,8 @@ let db = null, roomListener = null, roomsListener = null;
 
 async function initFb(projectId) {
   try {
-    // 10초 타임아웃
-    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+    // 5초 타임아웃
+    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000));
     const imports = Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js')
@@ -593,12 +593,18 @@ async function init(){
   const params=new URLSearchParams(location.search);
   const rc=params.get('room'); if(rc) window._pendingRoom=rc;
 
-  // 항상 we-riding으로 자동 연결
-  loaderTxt('연결 중...');
-  $('lov').classList.remove('hidden');
-  const ok=await initFb('we-riding');
-  hideLoader();
-  if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
+  try{
+    // 항상 we-riding으로 자동 연결
+    loaderTxt('연결 중...');
+    $('lov').classList.remove('hidden');
+    const ok=await initFb('we-riding');
+    if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
+  }catch(e){
+    console.error('init error:',e);
+  }finally{
+    // 반드시 로더 숨기기
+    hideLoader();
+  }
 
   // 저장된 사용자 있으면 자동 로그인
   const saved=load('user');
