@@ -124,7 +124,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-gpx-hud.active{background:rgba(21,101,192,.7);}
 
 /* GPX 이탈 알림 배너 */
-.abar.gpxdev{background:rgba(21,101,192,.92);top:205px}
+.abar.gpxdev{background:rgba(21,101,192,.92);top:calc(env(safe-area-inset-top,0px) + 205px)}
 
 /* GPX 모달 */
 .gpxm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:2100;display:none;align-items:flex-end;justify-content:center}
@@ -181,7 +181,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-end{background:rgba(231,76,60,.75);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;flex-shrink:0;white-space:nowrap;display:none}
 
 /* 선두 정보 카드 */
-.leader-card{position:absolute;top:68px;left:12px;right:12px;z-index:999;background:rgba(26,26,24,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;padding:8px 14px;display:none}
+.leader-card{position:absolute;top:calc(env(safe-area-inset-top,0px) + 68px);left:12px;right:12px;z-index:999;background:rgba(26,26,24,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;padding:8px 14px;display:none}
 .leader-card.show{display:block}
 .lc-title{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between}
 .lc-row{display:flex;gap:8px}
@@ -240,8 +240,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 /* 알림 배너 */
 .abar{position:absolute;left:12px;right:12px;z-index:1002;border-radius:12px;padding:12px 16px;display:none;align-items:center;gap:10px}
 .abar.show{display:flex}
-.abar.warn{background:rgba(231,76,60,.92);top:155px}
-.abar.gpxw{background:rgba(245,158,11,.92);top:205px}
+.abar.warn{background:rgba(231,76,60,.92);top:calc(env(safe-area-inset-top,0px) + 155px)}
+.abar.gpxw{background:rgba(245,158,11,.92);top:calc(env(safe-area-inset-top,0px) + 205px)}
 .abicon{font-size:20px;flex-shrink:0}
 .abtxt{flex:1;font-size:13px;color:#fff;font-weight:500;line-height:1.4}
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
@@ -334,11 +334,11 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <label>라이딩에서 표시될 이름</label>
     <div class="nrow">
-      <input class="ni" id="ni" type="text" placeholder="예: 지훈" maxlength="8" autocomplete="off">
+      <input class="ni" id="ni" type="text" placeholder="예: 사용자명" maxlength="8" autocomplete="off">
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.54</div>
+    <div class="version-info-inline">v1.56</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -1066,10 +1066,12 @@ window.joinRoom=async function(roomId){
   screen('sr');
   $('rnm').textContent=S.room.name;
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
-  // 입장 안내 팝업 (처음 입장 시에만)
+  // 입장 안내 팝업
   showJoinNotice();
   // 알림 권한 요청
   requestPushPermissionOnJoin();
+  // SW에 SOS 백그라운드 체크 시작
+  startSWSOSCheck(roomId);
   setTimeout(()=>{initMap();drawGpx();startTracking(roomId);startSync(roomId);},80);
 };
 
@@ -1623,6 +1625,7 @@ window.leaveRoom=async function(forced=false){
   }
   
   if(roomListener){roomListener();roomListener=null;}
+  stopSWSOSCheck();
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
   $('ab-gpxdev').classList.remove('show');
@@ -1936,13 +1939,31 @@ function showLocalNotification(title, body, type='normal') {
   n.onclick = () => { window.focus(); n.close(); };
 }
 
-// ── SOS 푸시 알림 (앱 닫혀있어도 수신)
-function sendSOSPush(name) {
-  showLocalNotification(
-    '🆘 긴급 도움 요청',
-    `${name}님이 도움을 요청합니다!`,
-    'sos'
-  );
+// ── 푸시 알림 (화면 닫혀있어도 수신)
+function sendSOSPush(names) {
+  // 앱 내 알림
+  showLocalNotification('🆘 긴급 도움 요청', `${names}님이 도움을 요청합니다!`, 'sos');
+}
+
+// ── SW에 SOS 체크 시작 요청 (방 입장 시)
+async function startSWSOSCheck(roomId) {
+  if (!_swReg || !S.user) return;
+  const sw = _swReg.active || _swReg.installing || _swReg.waiting;
+  if (sw) {
+    sw.postMessage({
+      type: 'SOS_ALERT',
+      roomId,
+      userId: S.user.id,
+      ts: Date.now()
+    });
+  }
+}
+
+// ── SW에 SOS 체크 중단 요청 (방 나갈 때)
+async function stopSWSOSCheck() {
+  if (!_swReg) return;
+  const sw = _swReg.active;
+  if (sw) sw.postMessage({ type: 'STOP_SOS_CHECK' });
 }
 
 // ── 초기 실행
