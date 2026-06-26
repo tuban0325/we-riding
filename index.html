@@ -201,12 +201,12 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:220px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s,max-height .3s}
+.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:620px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s,max-height .3s}
 .mp.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
 .mpt{font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;flex-shrink:0}
 .sort-hint{display:none}
 .mph{display:none}
-.mlist{display:flex;flex-direction:column;gap:2px;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;max-height:220px}
+.mlist{display:flex;flex-direction:column;gap:2px;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;max-height:590px}
 .mi{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:default}
 .mi.clickable{cursor:pointer}
 .mi.clickable:active{background:rgba(255,255,255,.05);border-radius:8px}
@@ -288,7 +288,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.30</div>
+    <div class="version-info-inline">v1.31</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -1169,7 +1169,7 @@ function renderPanel(members,ownerId){
     const headerH=30; // 헤더 높이
     const calcH=Math.min(totalCnt,10)*itemH+headerH;
     const minH=106; // 최소 (2명 기준)
-    panel.style.maxHeight=Math.max(minH,calcH)+'px';
+    panel.style.maxHeight=Math.min(Math.max(minH,calcH),620)+'px';
   }
   const hasGpx=S.gpxPoints&&S.gpxPoints.length>0;
   // GPX 있으면 경로 진행 거리 기준 정렬, 없으면 속도 기준
