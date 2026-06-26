@@ -288,7 +288,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.24</div>
+    <div class="version-info-inline">v1.25</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -1043,6 +1043,15 @@ function startSync(roomId){
     }
     const data=snap.val();
     const members=data.members||{};
+
+    // 멤버가 0명이면 방 자동 삭제
+    if(Object.keys(members).length===0){
+      if(window._fb){
+        const {ref,remove}=window._fb;
+        remove(ref(db,`rooms/${roomId}`)).catch(()=>{});
+      }
+      leaveRoom(true); return;
+    }
     
     // ✅ 항상 최신 S.room 업데이트 (방장 이관 로직이 이 데이터 사용)
     S.room={...data, id:roomId, members};
@@ -1500,22 +1509,35 @@ window.closeMemberModal=function(){
 window.doLogout=async function(){
   if(!confirm('로그아웃 하시겠어요?')) return;
   
-  // 자신이 방장인 방 삭제
-  if(S.fbConn&&db&&window._fb&&S.user){
+  // 현재 라이딩 방에 있으면 먼저 나가기
+  if(S.room&&S.fbConn&&window._fb){
     try{
-      const {ref,get,remove}=window._fb;
-      const rooms=await new Promise(resolve=>{
-        window._fb.onValue(ref(db,'rooms'),snap=>resolve(snap.val()||{}),{onlyOnce:true});
-      });
-      const myRooms=Object.entries(rooms).filter(([,r])=>r.ownerId===S.user.id);
-      for(const [roomId] of myRooms){
-        await remove(ref(db,`rooms/${roomId}`));
+      const {ref,remove,update}=window._fb;
+      const members=S.room?.members||{};
+      const others=Object.keys(members).filter(uid=>uid!==S.user.id);
+      const isOwner=S.room.ownerId===S.user.id;
+
+      if(others.length===0){
+        // 혼자면 방 삭제
+        await remove(ref(db,`rooms/${S.room.id}`));
+      } else {
+        // 다른 팀원 있으면 나만 제거, 방장이면 이관
+        const upd={};
+        if(isOwner) upd[`rooms/${S.room.id}/ownerId`]=others[0];
+        upd[`rooms/${S.room.id}/members/${S.user.id}`]=null;
+        await update(ref(db),upd);
       }
     }catch(e){}
   }
-  
+
+  // 상태 초기화
+  if(roomListener){roomListener();roomListener=null;}
+  if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
+  if(S.watchId)navigator.geolocation.clearWatch(S.watchId);
+  if(S.statTmr)clearInterval(S.statTmr);
+  S.room=null; S.user=null; S.fbConn=false;
+
   ['user','ci','fbProjectId'].forEach(k=>localStorage.removeItem('WE_'+k));
-  S.user=null; S.fbConn=false;
   $('ls1').style.display='block';
   $('ls2').style.display='none';
   screen('sl');
@@ -1523,74 +1545,8 @@ window.doLogout=async function(){
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 
-// ── 앱 닫기/백그라운드 시 정리
-async function cleanupOnExit(){
-  if(!S.fbConn||!S.user||!window._fb) return;
-  try{
-    const {ref,remove,update,get}=window._fb;
-    if(S.room){
-      const members=S.room?.members||{};
-      const others=Object.keys(members).filter(uid=>uid!==S.user.id);
-      if(others.length===0){
-        // 혼자 있는 경우 → 방 전체 삭제
-        await remove(ref(db,`rooms/${S.room.id}`));
-      } else {
-        // 다른 팀원 있으면 → 나만 제거, 방장이면 이관
-        const isOwner=S.room.ownerId===S.user.id;
-        const upd={};
-        if(isOwner) upd[`rooms/${S.room.id}/ownerId`]=others[0];
-        upd[`rooms/${S.room.id}/members/${S.user.id}`]=null;
-        await update(ref(db),upd);
-      }
-    }
-  }catch(e){}
-}
-
-// 탭/앱 닫기
-window.addEventListener('beforeunload',()=>{
-  // beforeunload는 async 불가 → sendBeacon 또는 동기 처리
-  if(!S.fbConn||!S.user||!S.room||!window._fb) return;
-  try{
-    const {ref,remove,update}=window._fb;
-    const members=S.room?.members||{};
-    const others=Object.keys(members).filter(uid=>uid!==S.user.id);
-    if(others.length===0){
-      remove(ref(db,`rooms/${S.room.id}`));
-    } else {
-      const isOwner=S.room.ownerId===S.user.id;
-      const upd={};
-      if(isOwner) upd[`rooms/${S.room.id}/ownerId`]=others[0];
-      upd[`rooms/${S.room.id}/members/${S.user.id}`]=null;
-      update(ref(db),upd);
-    }
-  }catch(e){}
-});
-
-// 카카오톡 인앱 브라우저 닫기 (visibilitychange)
-document.addEventListener('visibilitychange',async()=>{
-  if(document.visibilityState==='hidden'){
-    await cleanupOnExit();
-  }
-});
-
-// pagehide (iOS Safari, 카카오 인앱)
-window.addEventListener('pagehide',()=>{
-  if(!S.fbConn||!S.user||!S.room||!window._fb) return;
-  try{
-    const {ref,remove,update}=window._fb;
-    const members=S.room?.members||{};
-    const others=Object.keys(members).filter(uid=>uid!==S.user.id);
-    if(others.length===0){
-      remove(ref(db,`rooms/${S.room.id}`));
-    } else {
-      const isOwner=S.room.ownerId===S.user.id;
-      const upd={};
-      if(isOwner) upd[`rooms/${S.room.id}/ownerId`]=others[0];
-      upd[`rooms/${S.room.id}/members/${S.user.id}`]=null;
-      update(ref(db),upd);
-    }
-  }catch(e){}
-});
+// ── 방 멤버가 0명이 되면 자동 삭제 (startSync에서 처리)
+// ── 탭 전환/새로고침 시 방 유지 (로그아웃 시에만 정리)
 </script>
 </body>
 </html>
