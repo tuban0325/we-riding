@@ -296,7 +296,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.44</div>
+    <div class="version-info-inline">v1.45</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -659,14 +659,13 @@ function watchRooms(){
 
 function renderRooms(rooms){
   const el=$('rlist'),now=Date.now();
-  // members가 1명 이상 있는 방만 표시
   const HOUR=3600000;
   const valid=Object.values(rooms).filter(r=>{
     if(r.closed) return false;
     if(Object.keys(r.members||{}).length===0) return false;
-    // lastActivity 있으면 기준으로, 없으면 createdAt
-    const lastAct=r.lastActivity||r.createdAt||0;
-    if(now-lastAct>HOUR) return false; // 1시간 무활동 시 숨김
+    // lastActivity 없으면 현재 시간으로 간주 (기존 방 호환)
+    if(!r.lastActivity) return true;
+    if(now-r.lastActivity>HOUR) return false; // 1시간 무활동 시 숨김
     return true;
   });
   if(!valid.length){el.innerHTML=`<div class="empt"><span class="em">🚴</span>아직 진행 중인 라이딩이 없어요.</div>`;return;}
