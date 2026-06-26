@@ -320,7 +320,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.49</div>
+    <div class="version-info-inline">v1.50</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -1405,8 +1405,36 @@ function checkArrival(members){
 let _sosSeen={};
 let _sosVibInterval=null;
 
+function playSosSound(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    // SOS 패턴: 긴박한 3음 반복 (높은 음 → 더 높은 음 → 경보음)
+    const pattern=[
+      {freq:880, start:0,    dur:0.3},
+      {freq:1100,start:0.35, dur:0.3},
+      {freq:1320,start:0.7,  dur:0.3},
+      {freq:880, start:1.1,  dur:0.3},
+      {freq:1100,start:1.45, dur:0.3},
+      {freq:1320,start:1.8,  dur:0.3},
+    ];
+    pattern.forEach(({freq,start,dur})=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value=freq;
+      osc.type='square'; // 더 날카롭고 긴박한 소리
+      gain.gain.setValueAtTime(0.6,ctx.currentTime+start);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+start+dur);
+      osc.start(ctx.currentTime+start);
+      osc.stop(ctx.currentTime+start+dur+0.05);
+    });
+  }catch(e){}
+}
+
 function startSosVibration(){
+  // 즉시 진동 + 소리
   if(navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+  playSosSound();
   let count=0;
   _sosVibInterval=setInterval(()=>{
     count++;
@@ -1415,6 +1443,7 @@ function startSosVibration(){
     }
     if($('ab-sos').classList.contains('show')){
       if(navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+      playSosSound(); // 30초마다 소리 반복
     } else {
       clearInterval(_sosVibInterval); _sosVibInterval=null;
     }
