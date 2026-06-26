@@ -191,27 +191,29 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 @keyframes sos-pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.6)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
 .abar.sos{
   background:none!important;
-  top:auto!important;left:12px!important;right:12px!important;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 160px);
-  border-radius:16px!important;
+  top:50%!important;
+  left:16px!important;right:16px!important;
+  transform:translateY(-50%);
+  border-radius:20px!important;
   padding:0!important;
   display:none;
   flex-direction:column!important;
   align-items:stretch!important;
   gap:0!important;
   overflow:hidden;
-  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+  z-index:2100!important;
 }
 .abar.sos.show{display:flex}
-.sos-header{background:#C0392B;padding:16px 18px;display:flex;align-items:center;gap:12px}
-.sos-icon{font-size:32px;line-height:1;animation:sos-icon-pulse 1s infinite}
-@keyframes sos-icon-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-.sos-header-txt{flex:1}
-.sos-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;letter-spacing:.3px}
-.sos-name{font-size:13px;color:rgba(255,255,255,.85);font-weight:500}
-.sos-body{background:#E74C3C;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.sos-hint{font-size:12px;color:rgba(255,255,255,.8)}
-.sos-btn{background:#fff;border:none;border-radius:10px;color:#C0392B;font-size:13px;font-weight:700;padding:10px 18px;cursor:pointer;white-space:nowrap}
+.sos-header{background:#C0392B;padding:28px 24px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.sos-icon{font-size:52px;line-height:1;animation:sos-icon-pulse 1s infinite}
+@keyframes sos-icon-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+.sos-header-txt{flex:1;text-align:center}
+.sos-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:.3px}
+.sos-name{font-size:15px;color:rgba(255,255,255,.9);font-weight:500;line-height:1.4}
+.sos-body{background:#E74C3C;padding:20px 24px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.sos-hint{font-size:12px;color:rgba(255,255,255,.8);text-align:center}
+.sos-btn{background:#fff;border:none;border-radius:12px;color:#C0392B;font-size:15px;font-weight:700;padding:14px 32px;cursor:pointer;white-space:nowrap;width:100%}
 .mbtn-tm{height:52px;flex-direction:column;gap:0;background:rgba(26,26,24,.95)}
 .mbtn-tm.active{background:rgba(255,107,53,.85)}
 .tm-val{font-size:12px;font-weight:700;color:#fff;line-height:1.2;letter-spacing:.5px}
@@ -318,7 +320,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.48</div>
+    <div class="version-info-inline">v1.49</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -430,7 +432,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       </div>
     </div>
     <div class="sos-body">
-      <div class="sos-hint">확인 후 위치로 이동합니다</div>
+      <div class="sos-hint">아래 버튼을 누르면 해당 위치로 이동합니다</div>
       <button class="sos-btn" onclick="dismissSOS()">📍 위치 확인</button>
     </div>
   </div>
