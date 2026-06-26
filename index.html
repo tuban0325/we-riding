@@ -292,7 +292,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작→</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 표시돼요</div>
-    <div class="version-info-inline">v1.35</div>
+    <div class="version-info-inline">v1.36</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -667,7 +667,7 @@ function renderRooms(rooms){
         leadDistHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">선두 ${lead.speed.toFixed(1)}km/h</span>`;
       }
     }
-    return`<div class="rcard">`
+    return`<div class="rcard">
       <div class="rico">🚴</div>
       <div class="rinfo">
         <div class="rname">${r.name}${mine?' 👑':''}</div>
