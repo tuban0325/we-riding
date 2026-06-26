@@ -140,6 +140,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .gpxm-btn{width:100%;padding:13px;border:none;border-radius:12px;background:#1565C0;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
 .gpxm-btn.gpxm-del{background:#FFF0F0;color:#e53935;margin-top:6px}
 .gpxm-alert-section{background:#f0f7ff;border-radius:12px;padding:14px}
+.gpxm-alert-section.locked{background:#f5f5f5;opacity:.85}
+.gpxm-locked-msg{font-size:11px;color:#888;text-align:center;margin-top:10px;padding:6px 10px;background:rgba(0,0,0,.05);border-radius:8px}
 .gpxm-alert-title{font-size:13px;font-weight:700;color:#1565C0;margin-bottom:4px}
 .gpxm-alert-desc-top{font-size:11px;color:#888;margin-bottom:12px}
 .gpxm-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -338,7 +340,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.57</div>
+    <div class="version-info-inline">v1.58</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -500,21 +502,22 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
         <div class="gpxm-alert-title">📣 경로 이탈 알림</div>
         <div class="gpxm-alert-desc-top">코스에서 50m 이상 벗어나면 알립니다</div>
         <div class="gpxm-opts">
-          <button class="gpxm-opt" id="gpxopt-0" onclick="setGpxAlert(0)">
+          <button class="gpxm-opt" id="gpxopt-0" onclick="onGpxAlertClick(0)">
             <span class="gpxopt-icon">🔕</span>
             <span class="gpxopt-label">없음</span>
           </button>
-          <button class="gpxm-opt" id="gpxopt-1" onclick="setGpxAlert(1)">
+          <button class="gpxm-opt" id="gpxopt-1" onclick="onGpxAlertClick(1)">
             <span class="gpxopt-icon">🔔</span>
             <span class="gpxopt-label">나만</span>
             <span class="gpxopt-sub">진동+소리</span>
           </button>
-          <button class="gpxm-opt" id="gpxopt-2" onclick="setGpxAlert(2)">
+          <button class="gpxm-opt" id="gpxopt-2" onclick="onGpxAlertClick(2)">
             <span class="gpxopt-icon">📢</span>
             <span class="gpxopt-label">전체</span>
             <span class="gpxopt-sub">모두 배너</span>
           </button>
         </div>
+        <div class="gpxm-locked-msg" id="gpxm-locked-msg" style="display:none">🔒 방장만 변경할 수 있습니다</div>
       </div>
     </div>
   </div>
@@ -809,14 +812,36 @@ function updateGpxModalUI(){
   if(S.isOwner){
     $('gpxm-del-btn').style.display=hasGpx?'block':'none';
   }
-  // 알림 설정 섹션: GPX 있으면 누구나 볼 수 있음
+  // 알림 설정 섹션: GPX 있으면 표시 (방장/팀원 모두)
   $('gpxm-alert-section').style.display=hasGpx?'block':'none';
+  // 방장 여부에 따라 잠금 처리
+  const lockedMsg=$('gpxm-locked-msg');
+  const opts=$('gpxm-opts');
+  if(hasGpx){
+    if(S.isOwner){
+      // 방장: 버튼 활성화, 잠금 메시지 숨김
+      if(opts) opts.style.opacity='1';
+      if(lockedMsg) lockedMsg.style.display='none';
+    } else {
+      // 팀원: 버튼 비활성화, 잠금 메시지 표시
+      if(opts) opts.style.opacity='.5';
+      if(lockedMsg) lockedMsg.style.display='block';
+    }
+  }
   // 선택 버튼 active 상태 업데이트
   [0,1,2].forEach(i=>{
     const btn=$(`gpxopt-${i}`);
     if(btn) btn.classList.toggle('sel', S.gpxAlert===i);
   });
 }
+
+window.onGpxAlertClick=function(mode){
+  if(!S.isOwner){
+    toast('🔒 방장만 변경할 수 있습니다');
+    return;
+  }
+  window.setGpxAlert(mode);
+};
 
 window.setGpxAlert=async function(mode){
   S.gpxAlert=mode;
