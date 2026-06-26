@@ -149,6 +149,22 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 
 /* 팀원 모달 */
 .mm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:2000;display:none;align-items:flex-end;justify-content:center}
+/* 입장 안내 팝업 */
+.join-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:3000;display:none;align-items:center;justify-content:center;padding:24px}
+.join-overlay.show{display:flex}
+.join-modal{background:#1a1a18;border-radius:20px;width:100%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.join-modal-top{background:var(--orange);padding:24px 20px 20px;text-align:center}
+.join-modal-icon{font-size:44px;margin-bottom:10px}
+.join-modal-title{font-size:18px;font-weight:800;color:#fff;margin-bottom:4px}
+.join-modal-sub{font-size:12px;color:rgba(255,255,255,.8)}
+.join-modal-body{padding:20px}
+.join-notice-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.join-notice-item:last-child{border-bottom:none}
+.join-notice-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.join-notice-txt{font-size:13px;color:rgba(255,255,255,.85);line-height:1.5;font-weight:400}
+.join-notice-txt b{color:#fff;font-weight:700}
+.join-modal-btn{width:100%;padding:15px;background:var(--orange);color:#fff;border:none;border-radius:0 0 20px 20px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:.3px}
+.join-modal-btn:active{background:var(--od)}
 .mm-overlay.show{display:flex}
 .mm-modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;max-width:500px}
 .mm-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #eee}
@@ -320,7 +336,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.51</div>
+    <div class="version-info-inline">v1.52</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -521,6 +537,36 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="mm-close" onclick="closeMemberModal()">✕</button>
     </div>
     <div class="mm-list" id="mm-list"></div>
+  </div>
+</div>
+
+<!-- ══ 방 입장 안내 팝업 ══ -->
+<div class="join-overlay" id="join-overlay">
+  <div class="join-modal">
+    <div class="join-modal-top">
+      <div class="join-modal-icon">🚴</div>
+      <div class="join-modal-title">라이딩 시작 전 안내</div>
+      <div class="join-modal-sub">잠깐! 아래 내용을 확인해 주세요</div>
+    </div>
+    <div class="join-modal-body">
+      <div class="join-notice-item">
+        <div class="join-notice-icon">📱</div>
+        <div class="join-notice-txt">이 앱은 <b>웹 버전</b>입니다.<br>화면을 닫으면 GPS 기능이 끊어집니다.</div>
+      </div>
+      <div class="join-notice-item">
+        <div class="join-notice-icon">🔆</div>
+        <div class="join-notice-txt">라이딩 중에는 <b>화면을 켜두셔야</b> 위치가 공유됩니다.</div>
+      </div>
+      <div class="join-notice-item">
+        <div class="join-notice-icon">🔄</div>
+        <div class="join-notice-txt">앱을 다시 열면 <b>GPS가 자동으로 재연결</b>됩니다.</div>
+      </div>
+      <div class="join-notice-item">
+        <div class="join-notice-icon">🆘</div>
+        <div class="join-notice-txt">긴급 상황 시 우측 <b>[🆘] 버튼</b>으로 팀원에게 즉시 알릴 수 있습니다.</div>
+      </div>
+    </div>
+    <button class="join-modal-btn" onclick="closeJoinNotice()">확인했습니다 🚴</button>
   </div>
 </div>
 
@@ -1003,6 +1049,8 @@ window.joinRoom=async function(roomId){
   screen('sr');
   $('rnm').textContent=S.room.name;
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
+  // 입장 안내 팝업 (처음 입장 시에만)
+  showJoinNotice();
   setTimeout(()=>{initMap();drawGpx();startTracking(roomId);startSync(roomId);},80);
 };
 
@@ -1736,6 +1784,14 @@ window.onSOS=function(){
     }).catch(()=>{});
   }
   toast('🆘 긴급 도움 요청을 전송했어요',4000);
+};
+
+// ── 방 입장 안내 팝업
+function showJoinNotice(){
+  $('join-overlay').classList.add('show');
+}
+window.closeJoinNotice=function(){
+  $('join-overlay').classList.remove('show');
 };
 
 window.toggleStats=function(){
