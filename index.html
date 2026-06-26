@@ -154,9 +154,9 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 /* 팀원 모달 */
 .mm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:2000;display:none;align-items:flex-end;justify-content:center}
 /* 입장 안내 팝업 */
-.join-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:3000;display:none;align-items:center;justify-content:center;padding:24px}
+.join-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;pointer-events:all;touch-action:auto}
 .join-overlay.show{display:flex}
-.join-modal{background:#1a1a18;border-radius:20px;width:100%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.join-modal{background:#1a1a18;border-radius:20px;width:100%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);pointer-events:all;touch-action:auto}
 .join-modal-top{background:var(--orange);padding:24px 20px 20px;text-align:center}
 .join-modal-icon{font-size:44px;margin-bottom:10px}
 .join-modal-title{font-size:18px;font-weight:800;color:#fff;margin-bottom:4px}
@@ -167,7 +167,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .join-notice-icon{font-size:20px;flex-shrink:0;margin-top:1px}
 .join-notice-txt{font-size:13px;color:rgba(255,255,255,.85);line-height:1.5;font-weight:400}
 .join-notice-txt b{color:#fff;font-weight:700}
-.join-modal-btn{width:100%;padding:15px;background:var(--orange);color:#fff;border:none;border-radius:0 0 20px 20px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:.3px}
+.join-modal-btn{width:100%;padding:15px;background:var(--orange);color:#fff;border:none;border-radius:0 0 20px 20px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:.3px;pointer-events:all;touch-action:manipulation}
 .join-modal-btn:active{background:var(--od)}
 .mm-overlay.show{display:flex}
 .mm-modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;max-width:500px}
@@ -340,7 +340,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.58</div>
+    <div class="version-info-inline">v1.60</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -1092,8 +1092,6 @@ window.joinRoom=async function(roomId){
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
   // 입장 안내 팝업
   showJoinNotice();
-  // 알림 권한 요청
-  requestPushPermissionOnJoin();
   // SW에 SOS 백그라운드 체크 시작
   startSWSOSCheck(roomId);
   setTimeout(()=>{initMap();drawGpx();startTracking(roomId);startSync(roomId);},80);
@@ -1849,6 +1847,8 @@ function showJoinNotice(){
 }
 window.closeJoinNotice=function(){
   $('join-overlay').classList.remove('show');
+  // 팝업 닫힌 후 알림 권한 요청 (겹치지 않게)
+  setTimeout(()=>requestPushPermissionOnJoin(), 500);
 };
 
 window.toggleStats=function(){
