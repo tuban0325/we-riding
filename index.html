@@ -336,7 +336,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.52</div>
+    <div class="version-info-inline">v1.53</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -573,6 +573,9 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 <div class="toast" id="toast"></div>
 
 <script type="module">
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 1: Firebase 초기화                          ║
+// ╚══════════════════════════════════════════════════════╝
 let db = null, roomListener = null, roomsListener = null;
 
 async function initFb(projectId) {
@@ -629,6 +632,9 @@ function hav(a,b,c,d){const R=6371,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=M
 function save(k,v){try{localStorage.setItem('WE_'+k,JSON.stringify(v))}catch(e){}}
 function load(k){try{return JSON.parse(localStorage.getItem('WE_'+k))}catch(e){return null}}
 
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 2: 로그인 / 초기화                          ║
+// ╚══════════════════════════════════════════════════════╝
 // ── Firebase ID 입력
 window.initFirebaseWithId=async function(){
   const pid=$('fb-project-id').value.trim();
@@ -710,6 +716,9 @@ async function init(){
   screen('sl');
 }
 
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 3: 홈 화면 / 방 목록                        ║
+// ╚══════════════════════════════════════════════════════╝
 // ── 홈
 function renderHome(){
   $('uname').textContent=S.user.name;
@@ -774,6 +783,9 @@ function renderRooms(rooms){
   }).join('');
 }
 
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 4: GPX 기능                                 ║
+// ╚══════════════════════════════════════════════════════╝
 // ── GPX 모달 열기/닫기
 window.openGpxModal=function(){
   const overlay=$('gpxm-overlay');
@@ -960,6 +972,9 @@ function checkGpxDeviation(){
   }
 }
 
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 5: 방 관리 (만들기/입장/나가기)             ║
+// ╚══════════════════════════════════════════════════════╝
 // ── 방 만들기
 window.createRoom=async function(){
   if(!S.fbConn){toast('Firebase를 확인해주세요');return;}
@@ -1054,6 +1069,9 @@ window.joinRoom=async function(roomId){
   setTimeout(()=>{initMap();drawGpx();startTracking(roomId);startSync(roomId);},80);
 };
 
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 6: 지도 / GPS / Firebase 동기화             ║
+// ╚══════════════════════════════════════════════════════╝
 // ── 지도
 function initMap(){
   if(typeof L==='undefined'){toast('지도 로딩 중...');return;}
@@ -1314,6 +1332,9 @@ function mkrIcon(name,color,isMe){
   return L.divIcon({html,className:'',iconSize:[s,totalH],iconAnchor:[s/2,s]});
 }
 
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 7: 팀원 패널 / 선두 카드 / 알림             ║
+// ╚══════════════════════════════════════════════════════╝
 // ── 멤버 패널
 function renderPanel(members,ownerId){
   const el=$('mlist');
@@ -1412,6 +1433,9 @@ function checkBehind(members){
   if(behinds.length){$('ab-behind-txt').textContent=`${behinds.join(', ')}님이 500m 이상 뒤처지고 있어요.`;el.classList.add('show');autoHideAlert('ab-behind','behind');}
   else{el.classList.remove('show');S.dismissed.behind=false;}
 }
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 8: 방 생명주기 / SOS / 코스 정보            ║
+// ╚══════════════════════════════════════════════════════╝
 // ── 무활동 1시간 자동 종료
 let _inactivityWarn=false;
 function checkInactivity(data){
@@ -1819,6 +1843,9 @@ window.showMemberModal=function(){window.toggleMemberPanel();};
 window.closeMemberModal=function(){
   $('mm-overlay').classList.remove('show');
 };
+// ╔══════════════════════════════════════════════════════╗
+// ║  SECTION 9: 공유 / 로그아웃 / 기타                   ║
+// ╚══════════════════════════════════════════════════════╝
 window.doLogout=async function(){
   if(!confirm('로그아웃 하시겠어요?')) return;
   
