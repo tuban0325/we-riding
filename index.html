@@ -320,7 +320,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.50</div>
+    <div class="version-info-inline">v1.51</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -1438,7 +1438,7 @@ function startSosVibration(){
   let count=0;
   _sosVibInterval=setInterval(()=>{
     count++;
-    if(count>=20){ // 10분(20×30초) 후 자동 중단
+    if(count>=60){ // 10분(60×10초) 후 자동 중단
       clearInterval(_sosVibInterval); _sosVibInterval=null; return;
     }
     if($('ab-sos').classList.contains('show')){
@@ -1447,7 +1447,7 @@ function startSosVibration(){
     } else {
       clearInterval(_sosVibInterval); _sosVibInterval=null;
     }
-  },30000);
+  },10000);
 }
 
 function stopSosVibration(){
