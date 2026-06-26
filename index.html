@@ -113,7 +113,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 #map{flex:1;width:100%;z-index:1}
 .hud{position:absolute;top:0;left:0;right:0;z-index:1000;padding:8px 12px 0;pointer-events:none}
 .hud-inner{background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:8px;pointer-events:all}
-.btn-back{background:rgba(231,76,60,.85);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:6px 12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.btn-back{background:var(--orange);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:6px 12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:4px}
 .rnm{flex:1;font-size:14px;font-weight:700;color:#fff;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mbadge{background:var(--orange);color:#fff;font-size:12px;font-weight:700;padding:4px 9px;border-radius:20px;flex-shrink:0}
 .btn-sh{background:rgba(255,255,255,.12);border:none;border-radius:8px;color:#fff;font-size:16px;padding:6px 10px;cursor:pointer;flex-shrink:0}
@@ -201,7 +201,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-dis{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;cursor:pointer;flex-shrink:0}
 
 /* 멤버 패널 */
-.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:220px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s}
+.mp{position:absolute;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);left:12px;right:70px;z-index:1001;background:rgba(26,26,24,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px;padding:10px 12px;max-width:200px;max-height:220px;display:flex;flex-direction:column;transition:opacity .2s,transform .2s,max-height .3s}
 .mp.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
 .mpt{font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;flex-shrink:0}
 .sort-hint{display:none}
@@ -288,7 +288,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.27</div>
+    <div class="version-info-inline">v1.30</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -397,7 +397,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   </div>
 
   <div class="mp" id="mp-panel">
-    <div class="mpt">팀원 현황</div>
+    <div class="mpt">팀원 현황 <span id="mp-cnt" style="color:var(--orange);font-size:11px;font-weight:700;letter-spacing:0;text-transform:none"></span></div>
     <div class="mlist" id="mlist"></div>
   </div>
 </div>
@@ -573,23 +573,22 @@ window.doLogin=async function(){
   S.user={id,name,color:getColor(ci)};
   save('ci',ci);
   save('user',{id,name});
-  const fbpid=load('fbProjectId')||'we-riding';
-  $('fb-project-id').value=fbpid;
 
-  if(window._pendingRoom){
-    loaderTxt('Firebase 연결 중...');
+  // Firebase 미연결 시 자동 연결 (we-riding 고정, 설정 화면 없음)
+  if(!S.fbConn){
+    loaderTxt('연결 중...');
     $('lov').classList.remove('hidden');
-    const ok=await initFb(fbpid);
+    const ok=await initFb('we-riding');
     hideLoader();
-    if(ok){
-      S.fbConn=true;
-      save('fbProjectId',fbpid);
-      tryJoinPendingRoom();
-      return;
-    }
-    toast('❌ Firebase 연결 실패. 프로젝트 ID를 확인해주세요');
+    if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
+    else { toast('❌ 연결 실패. 잠시 후 다시 시도해주세요'); return; }
   }
-  screen('s-fbsetup');
+
+  // 초대 링크로 왔으면 바로 방 입장
+  if(window._pendingRoom){ tryJoinPendingRoom(); return; }
+
+  // 홈으로 이동
+  renderHome(); screen('sh');
 };
 
 // ── 초기화
@@ -597,31 +596,25 @@ async function init(){
   const params=new URLSearchParams(location.search);
   const rc=params.get('room'); if(rc) window._pendingRoom=rc;
 
+  // 항상 we-riding으로 자동 연결
+  loaderTxt('연결 중...');
+  $('lov').classList.remove('hidden');
+  const ok=await initFb('we-riding');
+  hideLoader();
+  if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
+
+  // 저장된 사용자 있으면 자동 로그인
   const saved=load('user');
   if(saved?.id&&saved?.name){
     const ci=load('ci')??0;
     S.user={id:saved.id,name:saved.name,color:getColor(ci)};
-    const fbpid=load('fbProjectId');
-    $('fb-project-id').value=fbpid||'we-riding';
-    if(fbpid){
-      loaderTxt('Firebase 연결 중...');
-      $('lov').classList.remove('hidden');
-      const ok=await initFb(fbpid);
-      hideLoader();
-      if(ok){
-        S.fbConn=true;
-        if(!tryJoinPendingRoom()){
-          renderHome();
-          screen('sh');
-        }
-        return;
-      }
+    if(!tryJoinPendingRoom()){
+      renderHome(); screen('sh');
     }
-    screen('s-fbsetup');
     return;
   }
 
-  hideLoader(); screen('sl');
+  screen('sl');
 }
 
 // ── 홈
@@ -1165,6 +1158,19 @@ function renderPanel(members,ownerId){
   const el=$('mlist');
   const mLat=S.myPos?.lat,mLng=S.myPos?.lng;
   const now=Date.now();
+  // 인원수 표시
+  const totalCnt=Object.keys(members).length;
+  const cntEl=$('mp-cnt');
+  if(cntEl) cntEl.textContent=totalCnt?`· ${totalCnt}명`:'';
+  // 인원수에 따라 패널 최대 높이 자동 조정 (1명=60px, 최대 10명=220px)
+  const panel=$('mp-panel');
+  if(panel){
+    const itemH=46; // 아이템 하나 높이
+    const headerH=30; // 헤더 높이
+    const calcH=Math.min(totalCnt,10)*itemH+headerH;
+    const minH=106; // 최소 (2명 기준)
+    panel.style.maxHeight=Math.max(minH,calcH)+'px';
+  }
   const hasGpx=S.gpxPoints&&S.gpxPoints.length>0;
   // GPX 있으면 경로 진행 거리 기준 정렬, 없으면 속도 기준
   const sorted=Object.entries(members).filter(([,m])=>m.lat&&m.lng).sort(([,a],[,b])=>{
