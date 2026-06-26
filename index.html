@@ -30,22 +30,22 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .brand{font-size:26px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:4px}
 .brand span{color:var(--orange)}
 .sub{font-size:13px;color:var(--g300);margin-bottom:32px;text-align:center}
-.lcard{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:20px;padding:24px 20px;width:100%;max-width:360px}
+.lcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px 24px;width:100%;max-width:360px}
 .lcard-t{font-size:12px;font-weight:600;color:var(--g300);text-align:center;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
 .btn-guest{display:flex;align-items:center;justify-content:center;width:100%;padding:13px;background:transparent;color:var(--g300);font-family:var(--font);font-size:14px;font-weight:500;border:1px solid rgba(255,255,255,.15);border-radius:12px;cursor:pointer}
 
 .nw{width:100%;max-width:360px;margin-top:16px}
-.nw label{display:block;font-size:13px;color:var(--g300);margin-bottom:8px;font-weight:500}
+.nw label{display:block;font-size:13px;color:var(--g300);margin-bottom:8px;font-weight:500}.lcard label{display:block;font-size:12px;color:var(--g300);margin-bottom:8px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
 
 /* 버전 정보 */
 .version-info{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.8px}
-.version-info-inline{font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.8px;margin-top:12px;text-align:center}
+.version-info-inline{font-size:10px;color:rgba(255,255,255,.25);font-weight:500;letter-spacing:.6px;margin-top:16px;text-align:right}
 .nrow{display:flex;gap:8px;width:100%}
-.ni{flex:1 1 0;min-width:0;padding:13px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-family:var(--font);font-size:15px;outline:none}
+.ni{flex:1 1 0;min-width:0;padding:13px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-family:var(--font);font-size:15px;font-weight:500;outline:none}
 .ni::placeholder{color:var(--g500)}.ni:focus{border-color:var(--orange)}
-.btn-go{flex:0 0 auto;padding:13px 16px;background:var(--orange);color:#fff;font-family:var(--font);font-size:14px;font-weight:700;border:none;border-radius:12px;cursor:pointer;white-space:nowrap;min-width:64px}
+.btn-go{flex:0 0 auto;padding:13px 18px;background:var(--orange);color:#fff;font-family:var(--font);font-size:14px;font-weight:700;border:none;border-radius:12px;cursor:pointer;white-space:nowrap;min-width:72px;letter-spacing:.3px}
 .btn-go:active{background:var(--od)}
-.nhint{font-size:11px;color:var(--g500);margin-top:8px;text-align:center}
+.nhint{font-size:11px;color:var(--g500);margin-top:7px;text-align:left}
 
 /* Firebase ID 입력 화면 */
 #s-fbsetup{background:linear-gradient(160deg,#1A1A18 0%,#2C2C2A 60%,#1A1A18 100%);align-items:center;justify-content:center;padding:40px 20px;position:relative;overflow:hidden}
@@ -288,11 +288,11 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <label>라이딩에서 표시될 이름</label>
     <div class="nrow">
-      <input class="ni" id="ni" type="text" placeholder="예: 이름" maxlength="8" autocomplete="off">
-      <button class="btn-go" onclick="doLogin()">시작→</button>
+      <input class="ni" id="ni" type="text" placeholder="예: 지훈" maxlength="8" autocomplete="off">
+      <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
-    <div class="nhint">최대 8자 · 지도에 표시돼요</div>
-    <div class="version-info-inline">v1.38</div>
+    <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
+    <div class="version-info-inline">v1.39</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
