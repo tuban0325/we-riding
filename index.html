@@ -338,7 +338,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.56</div>
+    <div class="version-info-inline">v1.57</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -704,15 +704,14 @@ async function init(){
     hideLoader();
   }
 
-  // 저장된 사용자 있으면 자동 로그인
+  // 저장된 이름 있으면 입력창에 자동 채우기
   const saved=load('user');
-  if(saved?.id&&saved?.name){
-    const ci=load('ci')??0;
-    S.user={id:saved.id,name:saved.name,color:getColor(ci)};
-    if(!tryJoinPendingRoom()){
-      renderHome(); screen('sh');
-    }
-    return;
+  if(saved?.name){
+    // 이름만 입력창에 미리 채워둠 (자동 로그인 X)
+    setTimeout(()=>{
+      const ni=$('ni');
+      if(ni) ni.value=saved.name;
+    },100);
   }
 
   screen('sl');
@@ -1888,7 +1887,7 @@ window.doLogout=async function(){
 
   ['user','ci','fbProjectId'].forEach(k=>localStorage.removeItem('WE_'+k));
   $('ls1').style.display='block';
-  $('ni').value='';
+  // 이름은 지우지 않음 (다음 로그인 시 재사용)
   screen('sl');
 };
 
