@@ -186,6 +186,10 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .mctrl{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);z-index:1002;display:flex;flex-direction:column;gap:8px}
 .mbtn{width:40px;height:40px;border-radius:10px;background:rgba(26,26,24,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mbtn:active{background:rgba(255,107,53,.6)}
+.mbtn-sos{background:rgba(231,76,60,.9);animation:sos-pulse 2s infinite}
+.mbtn-sos:active{background:#c0392b}
+@keyframes sos-pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.6)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
+.abar.sos{background:rgba(231,76,60,.95);top:155px}
 .mbtn-tm{height:52px;flex-direction:column;gap:0;background:rgba(26,26,24,.95)}
 .mbtn-tm.active{background:rgba(255,107,53,.85)}
 .tm-val{font-size:12px;font-weight:700;color:#fff;line-height:1.2;letter-spacing:.5px}
@@ -292,7 +296,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.39</div>
+    <div class="version-info-inline">v1.44</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -374,6 +378,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     </div>
   </div>
   <div class="mctrl">
+    <button class="mbtn mbtn-sos" id="btn-sos" onclick="onSOS()" title="긴급 도움 요청">🆘</button>
     <button class="mbtn" id="btn-course-info" onclick="openCourseInfo()" title="코스 정보" style="opacity:.3;display:none">📊</button>
     <button class="mbtn" onclick="centerMe()">📍</button>
     <button class="mbtn" onclick="fitAll()">👥</button>
@@ -391,6 +396,13 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     <div class="abicon">📍</div>
     <div class="abtxt">코스를 벗어났어요! 경로를 확인하세요.</div>
     <button class="btn-dis" onclick="dismissAlert('ab-gpxdev','gpxdev')">확인</button>
+  </div>
+
+  <!-- 긴급 알림 배너 -->
+  <div class="abar sos" id="ab-sos">
+    <div class="abicon">🆘</div>
+    <div class="abtxt" id="ab-sos-txt">긴급 도움 요청!</div>
+    <button class="btn-dis" onclick="$('ab-sos').classList.remove('show');stopSosVibration()">확인</button>
   </div>
 
   <div class="mp" id="mp-panel">
@@ -648,11 +660,15 @@ function watchRooms(){
 function renderRooms(rooms){
   const el=$('rlist'),now=Date.now();
   // members가 1명 이상 있는 방만 표시
-  const valid=Object.values(rooms).filter(r=>
-    !r.closed &&
-    now-(r.createdAt||0)<86400000 &&
-    Object.keys(r.members||{}).length>0
-  );
+  const HOUR=3600000;
+  const valid=Object.values(rooms).filter(r=>{
+    if(r.closed) return false;
+    if(Object.keys(r.members||{}).length===0) return false;
+    // lastActivity 있으면 기준으로, 없으면 createdAt
+    const lastAct=r.lastActivity||r.createdAt||0;
+    if(now-lastAct>HOUR) return false; // 1시간 무활동 시 숨김
+    return true;
+  });
   if(!valid.length){el.innerHTML=`<div class="empt"><span class="em">🚴</span>아직 진행 중인 라이딩이 없어요.</div>`;return;}
   el.innerHTML=valid.map(r=>{
     const cnt=Object.keys(r.members||{}).length;
@@ -874,7 +890,7 @@ window.createRoom=async function(){
   const name=$('rni').value.trim()||`${S.user.name}의 라이딩`;
   const id=uid();
   const {ref,set}=window._fb;
-  await set(ref(db,`rooms/${id}`),{id,name,ownerId:S.user.id,createdAt:Date.now(),members:{}});
+  const now_=Date.now(); await set(ref(db,`rooms/${id}`),{id,name,ownerId:S.user.id,createdAt:now_,lastActivity:now_,members:{}});
   $('rni').value='';
   renderHome();
   joinRoom(id);
@@ -1112,6 +1128,9 @@ function startSync(roomId){
     $('mbadge').textContent=`${Object.keys(members).length}명`;
     renderPanel(members,data.ownerId);
     checkBehind(members);
+    checkInactivity(data);
+    checkArrival(members);
+    checkSOS(data);
   });
 }
 
@@ -1148,7 +1167,15 @@ function onPos(lat,lng,gspd,roomId){
 }
 async function pushPos(lat,lng,spd,roomId){
   if(!db||!window._fb) return;
-  try{await window._fb.set(window._fb.ref(db,`rooms/${roomId}/members/${S.user.id}`),{name:S.user.name,color:S.user.color,lat,lng,speed:spd,ts:Date.now()});}catch(e){}
+  try{
+    const now=Date.now();
+    const {ref,set,update}=window._fb;
+    const upd={};
+    upd[`rooms/${roomId}/members/${S.user.id}`]={name:S.user.name,color:S.user.color,lat,lng,speed:spd,ts:now};
+    // 움직임 있을 때만 lastActivity 갱신 (속도 > 0.5 km/h)
+    if(spd>0.5) upd[`rooms/${roomId}/lastActivity`]=now;
+    await update(ref(db),upd);
+  }catch(e){}
 }
 function simPos(roomId){
   let ang=0; const BL=35.8714,BN=128.6014;
@@ -1306,6 +1333,85 @@ function checkBehind(members){
   if(behinds.length){$('ab-behind-txt').textContent=`${behinds.join(', ')}님이 500m 이상 뒤처지고 있어요.`;el.classList.add('show');autoHideAlert('ab-behind','behind');}
   else{el.classList.remove('show');S.dismissed.behind=false;}
 }
+// ── 무활동 1시간 자동 종료
+let _inactivityWarn=false;
+function checkInactivity(data){
+  if(!S.isOwner) return; // 방장만 체크
+  const now=Date.now();
+  const lastAct=data.lastActivity||data.createdAt||0;
+  const idle=now-lastAct;
+  if(idle>3300000&&!_inactivityWarn){ // 55분 경과 → 5분 전 경고
+    _inactivityWarn=true;
+    toast('⚠️ 움직임이 없어 5분 후 자동 종료됩니다',5000);
+  }
+  if(idle>3600000){ // 1시간 경과 → 자동 종료
+    toast('🏁 1시간 무활동으로 라이딩이 종료됩니다');
+    setTimeout(()=>leaveRoom(false),2000);
+  }
+}
+
+// ── GPX 도착점 100m 이내 전원 도달 체크
+let _arrivalAlerted=false;
+function checkArrival(members){
+  if(!S.gpxPoints||!S.gpxPoints.length||_arrivalAlerted) return;
+  const pts=S.gpxPoints;
+  const dest=pts[pts.length-1]; // 도착점 (마지막 포인트)
+  const mems=Object.values(members).filter(m=>m.lat&&m.lng);
+  if(!mems.length) return;
+  // 모든 팀원이 도착점 100m 이내인지 확인
+  const allArrived=mems.every(m=>{
+    const d=hav(m.lat,m.lng,dest.lat,dest.lng)*1000; // m
+    return d<=100;
+  });
+  if(allArrived){
+    _arrivalAlerted=true;
+    toast('🎉 모든 팀원이 도착점에 도달했어요!',5000);
+    // 자동 종료 없음 - 방장이 직접 종료
+  }
+}
+
+// ── SOS 감지 → 팀원 배너 표시 (여러 명 동시 지원)
+let _sosSeen={};
+let _sosVibInterval=null;
+
+function startSosVibration(){
+  if(navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+  let count=0;
+  _sosVibInterval=setInterval(()=>{
+    count++;
+    if(count>=20){ // 10분(20×30초) 후 자동 중단
+      clearInterval(_sosVibInterval); _sosVibInterval=null; return;
+    }
+    if($('ab-sos').classList.contains('show')){
+      if(navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+    } else {
+      clearInterval(_sosVibInterval); _sosVibInterval=null;
+    }
+  },30000);
+}
+
+function stopSosVibration(){
+  if(_sosVibInterval){ clearInterval(_sosVibInterval); _sosVibInterval=null; }
+  if(navigator.vibrate) navigator.vibrate(0);
+}
+
+function checkSOS(data){
+  if(!data.sos) return;
+  const sosList=data.sos;
+  const now=Date.now();
+  const newSOS=Object.values(sosList).filter(s=>
+    s.uid!==S.user?.id &&
+    now-s.ts<30000 &&
+    !_sosSeen[s.uid+'_'+s.ts]
+  );
+  if(!newSOS.length) return;
+  newSOS.forEach(s=>{ _sosSeen[s.uid+'_'+s.ts]=true; });
+  const names=newSOS.map(s=>s.name).join(', ');
+  $('ab-sos-txt').textContent=`🆘 ${names}님이 도움을 요청합니다!`;
+  $('ab-sos').classList.add('show');
+  startSosVibration(); // 10분간 30초마다 진동
+}
+
 window.dismissAlert=function(id,key){$(id).classList.remove('show');S.dismissed[key]=true;setTimeout(()=>{S.dismissed[key]=false;},60000);};
 function autoHideAlert(id,key,ms=10000){
   setTimeout(()=>{
@@ -1366,7 +1472,7 @@ window.leaveRoom=async function(forced=false){
   $('leader-card').classList.remove('show');
   $('ab-behind').classList.remove('show');
   $('ab-gpxdev').classList.remove('show');
-  S.gpxPoints=[];S.gpxAlert=0;S.followMe=false;
+  S.gpxPoints=[];S.gpxAlert=0;S.followMe=false;_inactivityWarn=false;_arrivalAlerted=false;_sosSeen={};stopSosVibration();
   if(S._gpxMarkers){S._gpxMarkers.forEach(m=>{try{S.map?.removeLayer(m);}catch(e){}});S._gpxMarkers=[];}
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
@@ -1541,6 +1647,24 @@ window.openCourseInfo=function(){
   $('ci-overlay').classList.add('show');
 };
 window.closeCourseInfo=function(){$('ci-overlay').classList.remove('show');};
+
+// ── 긴급 도움 요청
+window.onSOS=function(){
+  if(!confirm(`긴급 도움을 요청할까요?
+"${S.user?.name}님이 도움을 요청합니다" 알림이 팀원에게 전송됩니다.`)) return;
+  const msg=`${S.user?.name}님이 도움을 요청합니다!`;
+  // Firebase에 SOS 이벤트 기록
+  if(S.fbConn&&S.room&&window._fb){
+    const {ref,set}=window._fb;
+    // uid별 독립 저장 → 여러 명 동시 SOS 가능
+    set(ref(db,`rooms/${S.room.id}/sos/${S.user.id}`),{
+      uid:S.user.id, name:S.user.name,
+      lat:S.myPos?.lat||null, lng:S.myPos?.lng||null,
+      ts:Date.now()
+    }).catch(()=>{});
+  }
+  toast('🆘 긴급 도움 요청을 전송했어요',4000);
+};
 
 window.toggleStats=function(){
   const panel=$('mstats-panel');
