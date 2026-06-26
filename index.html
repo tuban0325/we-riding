@@ -113,7 +113,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 #map{flex:1;width:100%;z-index:1}
 .hud{position:absolute;top:0;left:0;right:0;z-index:1000;padding:8px 12px 0;pointer-events:none}
 .hud-inner{background:rgba(26,26,24,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:8px;pointer-events:all}
-.btn-back{background:rgba(255,255,255,.12);border:none;border-radius:8px;color:#fff;font-size:16px;padding:6px 10px;cursor:pointer;flex-shrink:0}
+.btn-back{background:rgba(231,76,60,.85);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:6px 12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:4px}
 .rnm{flex:1;font-size:14px;font-weight:700;color:#fff;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mbadge{background:var(--orange);color:#fff;font-size:12px;font-weight:700;padding:4px 9px;border-radius:20px;flex-shrink:0}
 .btn-sh{background:rgba(255,255,255,.12);border:none;border-radius:8px;color:#fff;font-size:16px;padding:6px 10px;cursor:pointer;flex-shrink:0}
@@ -288,7 +288,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="lcard" id="ls1">
     <div class="lcard-t">시작하기</div>
     <button class="btn-guest" onclick="showNS()">👤 닉네임으로 시작하기</button>
-    <div class="version-info-inline">v1.25</div>
+    <div class="version-info-inline">v1.27</div>
   </div>
   <div class="nw" id="ls2" style="display:none">
     <label>라이딩에서 표시될 이름</label>
@@ -348,7 +348,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div id="map"></div>
   <div class="hud">
     <div class="hud-inner">
-      <button class="btn-back" onclick="leaveRoom()">←</button>
+      <button class="btn-back" onclick="leaveRoom()">← 나가기</button>
       <div class="rnm" id="rnm">라이딩</div>
       <button class="btn-gpx-hud" id="btn-gpx-hud" onclick="openGpxModal()" title="GPX 코스 등록">🗺️</button>
       <button class="btn-members" id="btn-members" onclick="toggleMemberPanel()">👥 <span id="mbadge">1명</span></button>
@@ -959,7 +959,7 @@ function initMap(){
   if(typeof L==='undefined'){toast('지도 로딩 중...');return;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;} S.mkrs={};
   const c=$('map'); if(c._leaflet_id) c._leaflet_id=null;
-  const map=L.map(c,{zoomControl:false}).setView([35.8714,128.6014],16);
+  const map=L.map(c,{zoomControl:false}).setView([35.8714,128.6014],18);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
   S.map=map;
   map.on('dragstart',()=>{S.followMe=false;}); // 드래그 시 자동추적 OFF
@@ -1129,7 +1129,7 @@ function onPos(lat,lng,gspd,roomId){
   $('s-dst').textContent=S.dist.toFixed(2);
   if(!S.myMkr){
     S.myMkr=L.marker([lat,lng],{icon:mkrIcon(S.user.name,S.user.color,true),zIndexOffset:1000}).addTo(S.map);
-    S.map.setView([lat,lng],16);
+    S.map.setView([lat,lng],18);
     S.followMe=true; // 첫 수신 시 자동 추적 ON
   } else {
     S.myMkr.setLatLng([lat,lng]);
@@ -1344,7 +1344,7 @@ window.toggleMemberPanel=function(){
 window.flyTo=function(lat,lng){
   if(S.map&&lat&&lng){
     S.followMe=false; // 팀원 위치로 이동 시 자동추적 OFF
-    S.map.flyTo([lat,lng],S.map.getZoom(),{duration:0.8});
+    S.map.flyTo([lat,lng],18,{duration:0.8});
     toast('📍 이동했어요');
   }
 };
