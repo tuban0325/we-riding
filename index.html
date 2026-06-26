@@ -296,7 +296,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.46</div>
+    <div class="version-info-inline">v1.47</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -402,7 +402,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="abar sos" id="ab-sos">
     <div class="abicon">🆘</div>
     <div class="abtxt" id="ab-sos-txt">긴급 도움 요청!</div>
-    <button class="btn-dis" onclick="$('ab-sos').classList.remove('show');stopSosVibration()">확인</button>
+    <button class="btn-dis" onclick="dismissSOS()">📍 위치 확인</button>
   </div>
 
   <div class="mp" id="mp-panel">
@@ -1406,10 +1406,26 @@ function checkSOS(data){
   if(!newSOS.length) return;
   newSOS.forEach(s=>{ _sosSeen[s.uid+'_'+s.ts]=true; });
   const names=newSOS.map(s=>s.name).join(', ');
+  // 첫 번째 SOS 위치 저장 (지도 이동용)
+  const firstSOS=newSOS[0];
+  window._sosLat=firstSOS.lat;
+  window._sosLng=firstSOS.lng;
   $('ab-sos-txt').textContent=`🆘 ${names}님이 도움을 요청합니다!`;
   $('ab-sos').classList.add('show');
-  startSosVibration(); // 10분간 30초마다 진동
+  startSosVibration();
 }
+
+window.dismissSOS=function(){
+  $('ab-sos').classList.remove('show');
+  stopSosVibration();
+  // SOS 발신자 위치로 지도 이동
+  if(window._sosLat&&window._sosLng&&S.map){
+    S.followMe=false;
+    S.map.flyTo([window._sosLat,window._sosLng],18,{duration:1});
+    toast('📍 SOS 위치로 이동했어요');
+  }
+  window._sosLat=null; window._sosLng=null;
+};
 
 window.dismissAlert=function(id,key){$(id).classList.remove('show');S.dismissed[key]=true;setTimeout(()=>{S.dismissed[key]=false;},60000);};
 function autoHideAlert(id,key,ms=10000){
@@ -1649,13 +1665,9 @@ window.closeCourseInfo=function(){$('ci-overlay').classList.remove('show');};
 
 // ── 긴급 도움 요청
 window.onSOS=function(){
-  if(!confirm(`긴급 도움을 요청할까요?
-"${S.user?.name}님이 도움을 요청합니다" 알림이 팀원에게 전송됩니다.`)) return;
-  const msg=`${S.user?.name}님이 도움을 요청합니다!`;
-  // Firebase에 SOS 이벤트 기록
+  if(!confirm('팀원에게 긴급 도움을 요청할까요?')) return;
   if(S.fbConn&&S.room&&window._fb){
     const {ref,set}=window._fb;
-    // uid별 독립 저장 → 여러 명 동시 SOS 가능
     set(ref(db,`rooms/${S.room.id}/sos/${S.user.id}`),{
       uid:S.user.id, name:S.user.name,
       lat:S.myPos?.lat||null, lng:S.myPos?.lng||null,
