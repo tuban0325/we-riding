@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.632</div>
+    <div class="version-info-inline">v1.633</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -1114,14 +1114,20 @@ window.createRoom=async function(){
   if(S.room){toast('⚠️ 현재 진행 중인 라이딩을 먼저 나가주세요');return;}
   const name=$('rni').value.trim()||`${S.user.name}의 라이딩`;
   const id=uid();
-  const {ref,set}=window._fb;
+  const {ref,set,update}=window._fb;
   const now_=Date.now();
-  await set(ref(db,`rooms/${id}`),{id,name,ownerId:S.user.id,createdAt:now_,lastActivity:now_,members:{}});
+  // 방 생성 + 방장을 멤버로 동시에 등록 (목록 필터 통과 위해)
+  const sessionKey=Math.random().toString(36).slice(2,10);
+  save('sessionKey',sessionKey);
+  const myIp=load('cachedIp')||'unknown';
+  const upd={};
+  upd[`rooms/${id}`]={id,name,ownerId:S.user.id,createdAt:now_,lastActivity:now_,members:{}};
+  upd[`rooms/${id}/members/${S.user.id}`]={name:S.user.name,color:S.user.color,lat:null,lng:null,speed:0,ts:now_,sessionKey,ip:myIp};
+  await update(ref(db),upd);
   $('rni').value='';
-  renderHome();
-  // 생성 후 바로 입장 (확인만)
   toast(`✅ "${name}" 방이 생성됐어요!`,2000);
-  setTimeout(()=>joinRoom(id),300);
+  // 바로 입장
+  joinRoom(id);
 };
 
 // ── 방 나가기 (홈 목록에서 또는 방 안에서)
