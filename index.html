@@ -341,7 +341,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.620</div>
+    <div class="version-info-inline">v1.621</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -667,11 +667,8 @@ window.doLogin=async function(){
   const saved=load('user');
   const id=saved?.id||uid();
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
-  S.user={id,name,color:getColor(ci)};
-  save('ci',ci);
-  save('user',{id,name});
 
-  // Firebase 미연결 시 자동 연결 (we-riding 고정, 설정 화면 없음)
+  // Firebase 미연결 시 자동 연결
   if(!S.fbConn){
     loaderTxt('연결 중...');
     $('lov').classList.remove('hidden');
@@ -680,6 +677,58 @@ window.doLogin=async function(){
     if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
     else { toast('❌ 연결 실패. 잠시 후 다시 시도해주세요'); return; }
   }
+
+  // ── IP 가져오기 (캐시 우선)
+  let myIp = load('cachedIp') || null;
+  if(!myIp){
+    try{
+      const res=await Promise.race([
+        fetch('https://api.ipify.org?format=json'),
+        new Promise((_,rej)=>setTimeout(()=>rej(),3000))
+      ]);
+      const data=await res.json();
+      myIp=data.ip||null;
+      if(myIp) save('cachedIp',myIp);
+    }catch(e){ myIp=null; }
+  }
+
+  // ── 현재 진행 중인 방에서 동일 이름 사용자 확인
+  if(S.fbConn&&window._fb){
+    try{
+      const {ref:_ref,get:_get}=window._fb;
+      const roomsSnap=await _get(_ref(db,'rooms'));
+      const rooms=roomsSnap.val()||{};
+      const now_=Date.now();
+      let conflict=null;
+
+      // 모든 방에서 동일 이름 검색
+      for(const [roomId,room] of Object.entries(rooms)){
+        if(!room.members) continue;
+        for(const [uid_,m] of Object.entries(room.members)){
+          if(uid_===id) continue; // 내 uid는 제외
+          if(m.name!==name) continue; // 다른 이름 제외
+          const isStale=now_-(m.ts||0)>20000; // 🔴 연결 끊김
+          const isSameIp=myIp&&m.ip&&myIp===m.ip;
+          if(!isStale&&!isSameIp){
+            // 🟢 활성 + 다른 IP → 다른 사용자
+            conflict={ roomId, uid:uid_, member:m };
+            break;
+          }
+        }
+        if(conflict) break;
+      }
+
+      if(conflict){
+        toast(`⚠️ "${name}" 이름을 사용 중인 팀원이 있어요. 다른 이름을 사용해주세요.`, 4000);
+        return; // 로그인 중단, 이름 입력창 유지
+      }
+    }catch(e){ /* 확인 실패 시 그냥 진행 */ }
+  }
+
+  // ── 로그인 처리
+  S.user={id,name,color:getColor(ci)};
+  save('ci',ci);
+  save('user',{id,name});
 
   // 초대 링크로 왔으면 바로 방 입장
   if(window._pendingRoom){ tryJoinPendingRoom(); return; }
@@ -1082,56 +1131,8 @@ window.joinRoom=async function(roomId){
     return;
   }
 
-  // ── IP 기반 동일 기기 판단
-  let myIp = load('cachedIp') || null;
-  if(!myIp){
-    try{
-      const res = await Promise.race([
-        fetch('https://api.ipify.org?format=json'),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),3000))
-      ]);
-      const data = await res.json();
-      myIp = data.ip || null;
-      if(myIp) save('cachedIp', myIp);
-    }catch(e){ myIp = null; }
-  }
-
-  // ── 동일 이름의 다른 uid가 방에 있는지 확인
-  const roomSnap = await get(ref(db,`rooms/${roomId}`));
-  const roomData = roomSnap.val() || {};
-  const members = roomData.members || {};
-  const sameNameMember = Object.entries(members).find(([uid_,m])=>
-    uid_ !== S.user.id && m.name === S.user.name
-  );
-
-  if(sameNameMember){
-    const [existingUid, existingMember] = sameNameMember;
-    const existingIp = existingMember.ip || null;
-    const isSameIp = myIp && existingIp && myIp === existingIp;
-    const now_ = Date.now();
-    const isStale = now_ - (existingMember.ts||0) > 20000; // 🔴 연결 끊김
-
-    if(isStale || isSameIp){
-      // 🔴 연결 끊김 or 같은 IP → 동일 사용자 재접속
-      // 기존 세션 방 나가기 + 로그아웃 처리 (Firebase에서 제거)
-      const {ref:_ref, remove:_remove, update:_update} = window._fb;
-      const existingMembers = (await get(_ref(db,`rooms/${roomId}`))).val()?.members||{};
-      const others = Object.keys(existingMembers).filter(u=>u!==existingUid);
-      const isExistingOwner = roomData.ownerId === existingUid;
-      const upd = {};
-      if(isExistingOwner && others.length > 0) upd[`rooms/${roomId}/ownerId`] = others[0];
-      upd[`rooms/${roomId}/members/${existingUid}`] = null;
-      await _update(_ref(db), upd).catch(()=>{});
-      toast('📱 이전 연결을 정리하고 입장합니다.', 2000);
-    } else {
-      // 🟢 활성 + 다른 IP → 다른 사용자
-      toast(`⚠️ "${S.user.name}" 이름을 사용 중인 팀원이 있어요. 다른 이름으로 변경해주세요.`, 4000);
-      // 로그인 화면으로 돌아가기
-      screen('sl');
-      setTimeout(()=>{ $('ni').value=''; $('ni').focus(); },300);
-      return;
-    }
-  }
+  // ── IP 가져오기 (로그인 시 캐시된 값 사용)
+  const myIp = load('cachedIp') || 'unknown';
 
   // ── 세션키 생성 + 멤버 등록 (IP 포함)
   const newSessionKey = Math.random().toString(36).slice(2,10);
