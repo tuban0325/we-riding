@@ -344,7 +344,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.645</div>
+    <div class="version-info-inline">v1.647</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -679,73 +679,85 @@ window.doLogin=async function(){
   const id=saved?.id||uid();
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
 
-  // Firebase 미연결 시 자동 연결
-  if(!S.fbConn){
-    loaderTxt('연결 중...');
+  // 시작 즉시 버튼 비활성화 + 로딩 표시
+  const btn=$('btn-go');
+  btn.disabled=true;
+  btn.textContent='확인 중...';
+
+  try{
+    // Firebase 미연결 시 자동 연결
+    if(!S.fbConn){
+      loaderTxt('Firebase 연결 중...');
+      $('lov').classList.remove('hidden');
+      const ok=await initFb('we-riding');
+      hideLoader();
+      if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
+      else { toast('❌ 연결 실패. 잠시 후 다시 시도해주세요'); return; }
+    }
+
+    // IP 가져오기
+    loaderTxt('준비 중...');
     $('lov').classList.remove('hidden');
-    const ok=await initFb('we-riding');
-    hideLoader();
-    if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
-    else { toast('❌ 연결 실패. 잠시 후 다시 시도해주세요'); return; }
-  }
+    let myIp = load('cachedIp') || null;
+    if(!myIp){
+      try{
+        const res=await Promise.race([
+          fetch('https://api.ipify.org?format=json'),
+          new Promise((_,rej)=>setTimeout(()=>rej(),3000))
+        ]);
+        const data=await res.json();
+        myIp=data.ip||null;
+        if(myIp) save('cachedIp',myIp);
+      }catch(e){ myIp=null; }
+    }
 
-  // ── IP 가져오기 (캐시 우선)
-  let myIp = load('cachedIp') || null;
-  if(!myIp){
-    try{
-      const res=await Promise.race([
-        fetch('https://api.ipify.org?format=json'),
-        new Promise((_,rej)=>setTimeout(()=>rej(),3000))
-      ]);
-      const data=await res.json();
-      myIp=data.ip||null;
-      if(myIp) save('cachedIp',myIp);
-    }catch(e){ myIp=null; }
-  }
-
-  // ── 현재 진행 중인 방에서 동일 이름 사용자 확인
-  if(S.fbConn&&window._fb){
-    try{
-      const {ref:_ref,get:_get}=window._fb;
-      const roomsSnap=await _get(_ref(db,'rooms'));
-      const rooms=roomsSnap.val()||{};
-      const now_=Date.now();
-      let conflict=null;
-
-      // 모든 방에서 동일 이름 검색
-      for(const [roomId,room] of Object.entries(rooms)){
-        if(!room.members) continue;
-        for(const [uid_,m] of Object.entries(room.members)){
-          if(uid_===id) continue; // 내 uid는 제외
-          if(m.name!==name) continue; // 다른 이름 제외
-          const isStale=now_-(m.ts||0)>20000; // 🔴 연결 끊김
-          const isSameIp=myIp&&m.ip&&myIp===m.ip;
-          if(!isStale&&!isSameIp){
-            // 🟢 활성 + 다른 IP → 다른 사용자
-            conflict={ roomId, uid:uid_, member:m };
-            break;
+    // 이름 중복 확인
+    loaderTxt('이름 확인 중...');
+    if(S.fbConn&&window._fb){
+      try{
+        const {ref:_ref,get:_get}=window._fb;
+        const roomsSnap=await _get(_ref(db,'rooms'));
+        const rooms=roomsSnap.val()||{};
+        const now_=Date.now();
+        let conflict=null;
+        for(const [roomId,room] of Object.entries(rooms)){
+          if(!room.members) continue;
+          for(const [uid_,m] of Object.entries(room.members)){
+            if(uid_===id) continue;
+            if(m.name!==name) continue;
+            const isStale=now_-(m.ts||0)>20000;
+            const isSameIp=myIp&&m.ip&&myIp===m.ip;
+            if(!isStale&&!isSameIp){
+              conflict={ roomId, uid:uid_, member:m };
+              break;
+            }
           }
+          if(conflict) break;
         }
-        if(conflict) break;
-      }
+        if(conflict){
+          hideLoader();
+          toast(`⚠️ "${name}" 이름을 사용 중인 팀원이 있어요. 다른 이름을 사용해주세요.`, 4000);
+          return;
+        }
+      }catch(e){}
+    }
 
-      if(conflict){
-        toast(`⚠️ "${name}" 이름을 사용 중인 팀원이 있어요. 다른 이름을 사용해주세요.`, 4000);
-        return; // 로그인 중단, 이름 입력창 유지
-      }
-    }catch(e){ /* 확인 실패 시 그냥 진행 */ }
+    // 로그인 처리
+    loaderTxt('로그인 중...');
+    S.user={id,name,color:getColor(ci)};
+    save('ci',ci);
+    save('user',{id,name});
+    hideLoader();
+
+    if(window._pendingRoom){ tryJoinPendingRoom(); return; }
+    renderHome(); screen('sh');
+
+  } finally {
+    // 항상 버튼 복원
+    hideLoader();
+    btn.disabled=false;
+    btn.textContent='시작 →';
   }
-
-  // ── 로그인 처리
-  S.user={id,name,color:getColor(ci)};
-  save('ci',ci);
-  save('user',{id,name});
-
-  // 초대 링크로 왔으면 바로 방 입장
-  if(window._pendingRoom){ tryJoinPendingRoom(); return; }
-
-  // 홈으로 이동
-  renderHome(); screen('sh');
 };
 async function init(){
   const params=new URLSearchParams(location.search);
@@ -823,60 +835,52 @@ function renderRooms(rooms){
   const el=$('rlist'),now=Date.now();
   const HOUR=3600000;
   const valid=Object.entries(rooms).map(([id,r])=>({...r,id})).filter(r=>{
-    if(!r.id||!r.name) return false; // id/name 없는 방 제외
+    if(!r.id||!r.name) return false;
     if(r.closed) return false;
-    const memberCnt=Object.keys(r.members||{}).length;
-    if(memberCnt===0) return false;
-    if(!r.lastActivity) return true; // lastActivity 없으면 활성으로 간주
+    if(Object.keys(r.members||{}).length===0) return false;
+    if(!r.lastActivity) return true;
     if(now-r.lastActivity>HOUR) return false;
     return true;
   });
   if(!valid.length){el.innerHTML=`<div class="empt"><span class="em">🚴</span>아직 진행 중인 라이딩이 없어요.</div>`;return;}
   el.innerHTML=valid.map(r=>{
-    const cnt=Object.keys(r.members||{}).length;
-    const ago=Math.floor((now-(r.createdAt||0))/60000);
+    const allMembers=Object.values(r.members||{});
+    const cnt=allMembers.length;
     const mine=r.ownerId===S.user?.id;
-    const mems=Object.values(r.members||{}).filter(m=>m.lat&&m.lng);
+    const amIIn=!!(r.members&&r.members[S.user?.id]);
 
-    // GPX 정보
+    // ── 1줄: 상태 아이콘
+    const maxSpd=Math.max(...allMembers.map(m=>m.speed||0),0);
+    let statusIcon='';
+    if(maxSpd>0.5)
+      statusIcon='<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>';
+    else if(cnt>0)
+      statusIcon='<span style="font-size:11px;color:#888;font-weight:700;background:rgba(136,136,136,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(136,136,136,.3)">☕ 휴식 중</span>';
+
+    // ── 2줄: 참가자 · 경과시간
+    const elapsedMin=Math.floor((now-(r.createdAt||0))/60000);
+    const elapsedTxt=elapsedMin<60?`${elapsedMin}분`:`${Math.floor(elapsedMin/60)}시간 ${elapsedMin%60}분`;
+
+    // ── 3줄 (GPX 있을 때만): 파일명 · 전체 거리
     const hasGpx=r.gpx&&Array.isArray(r.gpx)&&r.gpx.length>0;
-    const gpxName=r.gpxName||''; // 파일명
     let gpxTotalKm=0;
     if(hasGpx){
-      for(let i=1;i<r.gpx.length;i++){
+      for(let i=1;i<r.gpx.length;i++)
         gpxTotalKm+=hav(r.gpx[i-1].lat,r.gpx[i-1].lng,r.gpx[i].lat,r.gpx[i].lng);
-      }
     }
-    const gpxHtml=hasGpx
-      ?`<div style="font-size:11px;color:var(--blue);margin-top:3px;display:flex;align-items:center;gap:4px">
-          <span>🗺️</span>
-          <span style="font-weight:600">${gpxName||'GPX 코스'}</span>
-          <span style="color:var(--g500)">(${gpxTotalKm.toFixed(1)}km)</span>
-        </div>`
-      :'';
+    const row3=hasGpx?`<div style="font-size:11px;color:var(--blue);margin-top:2px;display:flex;align-items:center;gap:4px">
+      <span>🗺️</span><span style="font-weight:600">${r.gpxName||'GPX 코스'}</span>
+      <span style="color:var(--g500)">(${gpxTotalKm.toFixed(1)}km)</span>
+    </div>`:'';
 
-    let leadDistHtml=""; // 선두 정보는 4번째 줄에서 처리
-
-    // 내가 참여 중인지, 진행 중인지 확인
-    const amIIn=r.members&&r.members[S.user?.id];
-    const allSpeeds2=Object.values(r.members||{}).map(m=>m.speed||0);
-    const maxSpeed2=Math.max(...allSpeeds2,0);
-    const isActive=maxSpeed2>0.5;
-    const isResting=allSpeeds2.length>0&&maxSpeed2<=0.5;
-    let statusIcon='';
-    if(isActive) statusIcon='<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>';
-    else if(isResting) statusIcon='<span style="font-size:11px;color:#888;font-weight:700;background:rgba(136,136,136,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(136,136,136,.3)">☕ 휴식 중</span>';
-    const progressHtml=''; // 진행률은 4번째 줄에서 표시
-
-    // 4번째 줄: 경과시간 + 선두 GPX 진행 거리
-    const elapsedMin=Math.floor((now-(r.createdAt||0))/60000);
-    const elapsedHtml=elapsedMin<60
-      ?`<span>⏱️ ${elapsedMin}분 경과</span>`
-      :`<span>⏱️ ${Math.floor(elapsedMin/60)}시간 ${elapsedMin%60}분 경과</span>`;
-    let leadGpxHtml='';
-    if(hasGpx&&mems.length>0){
-      const lead=mems.sort((a,b)=>(b.speed||0)-(a.speed||0))[0];
-      if(lead.lat&&lead.lng){
+    // ── 4줄 (GPX 있을 때만): 선두 진행 거리 · 진행률
+    let row4='';
+    if(hasGpx&&gpxTotalKm>0){
+      // GPS 있는 멤버 우선, 없으면 전체 멤버 중 최근 활동자
+      const memsGps=allMembers.filter(m=>m.lat&&m.lng);
+      const lead=(memsGps.length>0?memsGps:allMembers)
+        .sort((a,b)=>(b.speed||0)-(a.speed||0))[0];
+      if(lead&&lead.lat&&lead.lng){
         const pts=r.gpx;
         let minD=999,minIdx=0;
         for(let i=0;i<pts.length;i++){
@@ -884,19 +888,28 @@ function renderRooms(rooms){
           if(d<minD){minD=d;minIdx=i;}
         }
         let acc=0;
-        for(let i=1;i<=minIdx;i++) acc+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
-        if(acc>0) leadGpxHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">📍 선두 ${acc.toFixed(1)}km</span>`;
+        for(let i=1;i<=minIdx;i++)
+          acc+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
+        const pct=Math.min(100,Math.round(acc/gpxTotalKm*100));
+        row4=`<div class="rmeta2" style="margin-top:2px">
+          <span style="color:var(--orange);font-weight:700">선두 ${acc.toFixed(1)}km</span>
+          <span style="color:var(--g300)">·</span>
+          <span style="font-weight:600">진행률 ${pct}%</span>
+        </div>`;
       }
     }
-    const row4Html=`<div class="rmeta2">${elapsedHtml}${leadGpxHtml}</div>`;
 
     return`<div class="rcard${amIIn?' rcard-mine':''}">
       <div class="rico">🚴</div>
       <div class="rinfo">
-        <div class="rname" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${r.name}${mine?' 👑':''}${statusIcon}${progressHtml}</div>
-        <div class="rmeta"><div class="ldot"></div><span>${cnt}명 참여 중</span><span>·</span><span>${ago<1?'방금':ago+'분 전'}</span></div>
-        ${gpxHtml}
-        ${row4Html}
+        <div class="rname" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${r.name}${mine?' 👑':''}${statusIcon}</div>
+        <div class="rmeta2" style="margin-top:3px">
+          <span>참가자 : <b>${cnt}명</b></span>
+          <span style="color:var(--g300)">·</span>
+          <span>경과 : <b>${elapsedTxt}</b></span>
+        </div>
+        ${row3}
+        ${row4}
       </div>
       <div class="racts">
         <button class="btn-join" onclick="joinRoom('${r.id}')">입장</button>
