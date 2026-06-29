@@ -1,7 +1,7 @@
 {
-  "name": "WE 라이딩",
-  "short_name": "WE 라이딩",
-  "description": "자전거 동호회 실시간 위치 공유",
+  "name": "수성철인클럽 라이딩",
+  "short_name": "수성철인클럽",
+  "description": "수성철인클럽 실시간 위치 공유 라이딩 앱",
   "start_url": "/we-riding/",
   "display": "standalone",
   "background_color": "#1A1A18",
