@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.627</div>
+    <div class="version-info-inline">v1.628</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -763,10 +763,19 @@ async function init(){
     hideLoader();
   }
 
-  // 저장된 이름 있으면 입력창에 자동 채우기
+  // 저장된 사용자 있으면 자동 로그인 → 홈으로
   const saved=load('user');
+  if(saved?.id&&saved?.name){
+    const ci=load('ci')??0;
+    S.user={id:saved.id,name:saved.name,color:getColor(ci)};
+    if(!tryJoinPendingRoom()){
+      renderHome(); screen('sh');
+    }
+    return;
+  }
+
+  // 저장된 이름만 있으면 입력창에 자동 채우기
   if(saved?.name){
-    // 이름만 입력창에 미리 채워둠 (자동 로그인 X)
     setTimeout(()=>{
       const ni=$('ni');
       if(ni) ni.value=saved.name;
@@ -815,7 +824,9 @@ function renderRooms(rooms){
   const valid=Object.entries(rooms).map(([id,r])=>({...r,id})).filter(r=>{
     if(!r.id||!r.name) return false; // id/name 없는 방 제외
     if(r.closed) return false;
-    if(Object.keys(r.members||{}).length===0) return false;
+    const memberCnt=Object.keys(r.members||{}).length;
+    // 멤버 0명이어도 5분 이내 생성된 방은 목록에 표시 (방장 입장 전)
+    if(memberCnt===0 && now-(r.createdAt||0)>300000) return false;
     if(!r.lastActivity) return true; // lastActivity 없으면 활성으로 간주
     if(now-r.lastActivity>HOUR) return false;
     return true;
@@ -1073,12 +1084,9 @@ window.createRoom=async function(){
   await set(ref(db,`rooms/${id}`),{id,name,ownerId:S.user.id,createdAt:now_,lastActivity:now_,members:{}});
   $('rni').value='';
   renderHome();
-  // 생성 후 바로 입장 여부 확인
-  if(confirm(`"${name}" 방이 생성됐어요! 바로 입장하시겠습니까?`)){
-    joinRoom(id);
-  } else {
-    toast('방 목록에서 [입장] 버튼을 눌러 입장하세요.',3000);
-  }
+  // 생성 후 바로 입장 (확인만)
+  toast(`✅ "${name}" 방이 생성됐어요!`,2000);
+  setTimeout(()=>joinRoom(id),300);
 };
 
 // ── 방 나가기 (홈 목록에서 또는 방 안에서)
