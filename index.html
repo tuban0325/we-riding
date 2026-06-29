@@ -41,7 +41,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 
 /* 버전 정보 */
 .version-info{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.8px}
-.version-info-inline{font-size:10px;color:rgba(255,255,255,.25);font-weight:500;letter-spacing:.6px;margin-top:16px;text-align:right}
+.version-info-inline{font-size:10px;color:rgba(255,255,255,.9);font-weight:500;letter-spacing:.6px;margin-top:16px;text-align:right}
 .nrow{display:flex;gap:8px;width:100%}
 .ni{flex:1 1 0;min-width:0;padding:13px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-family:var(--font);font-size:15px;font-weight:500;outline:none}
 .ni::placeholder{color:var(--g500)}.ni:focus{border-color:var(--orange)}
@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.631</div>
+    <div class="version-info-inline">v1.632</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -2115,9 +2115,8 @@ window.doLogout=async function(){
   S.room=null; S.user=null; S.fbConn=false;
 
   ['user','ci','fbProjectId'].forEach(k=>localStorage.removeItem('WE_'+k));
-  $('ls1').style.display='block';
-  // 이름은 지우지 않음 (다음 로그인 시 재사용)
-  screen('sl');
+  // 로그아웃 시 페이지 새로고침 → 깔끔한 초기 상태
+  location.reload();
 };
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
