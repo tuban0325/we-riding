@@ -64,7 +64,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 
 /* ── 홈 ── */
 #sh{background:var(--g50)}
-.hhead{background:#fff;padding:52px 20px 16px;border-bottom:1px solid var(--g100)}
+.hhead{background:#fff;padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 16px;border-bottom:1px solid var(--g100)}
 .hrow{display:flex;align-items:center;justify-content:space-between}
 .hgreet{font-size:18px;font-weight:700}.hgreet span{color:var(--orange)}
 .avbtn{padding:7px 14px;border-radius:8px;background:#E74C3C;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;white-space:nowrap;gap:5px;letter-spacing:0.3px}
@@ -99,9 +99,9 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .rlist{display:flex;flex-direction:column;gap:8px}
 .rcard{background:#fff;border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid var(--g100)}.rcard-mine{border:1.5px solid rgba(255,107,53,.4);background:#fffcfb}
 .rinfo{flex:1;min-width:0;overflow:hidden}
-.rname{font-size:19px;font-weight:800;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--g900)}
-.rmeta{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:6px;margin-top:0}
-.rmeta2{font-size:12px;color:var(--g500);display:flex;align-items:center;gap:5px;margin-top:3px}
+.rname{font-size:19px;font-weight:800;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--g900)}
+.rmeta{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:6px;margin-top:2px}
+.rmeta2{font-size:12px;color:var(--g500);display:flex;align-items:center;gap:5px;margin-top:2px}
 .ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 .racts{display:flex;gap:6px;flex-shrink:0}
@@ -348,7 +348,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.662</div>
+    <div class="version-info-inline">v1.663</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -803,7 +803,7 @@ function renderRooms(rooms){
         gpxTotalKm+=hav(r.gpx[i-1].lat,r.gpx[i-1].lng,r.gpx[i].lat,r.gpx[i].lng);
     }
     const gpxShort=(r.gpxName||'GPX 코스').length>20?(r.gpxName||'GPX 코스').substring(0,20)+'...':r.gpxName||'GPX 코스';
-    const row3=hasGpx?`<div style="font-size:13px;color:var(--blue);margin-top:4px;display:flex;align-items:center;gap:4px;overflow:hidden">
+    const row3=hasGpx?`<div style="font-size:12px;color:var(--blue);margin-top:2px;display:flex;align-items:center;gap:4px;overflow:hidden">
       <span style="flex-shrink:0">🗺️</span>
       <span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${gpxShort}</span>
       <span style="font-size:13px;color:var(--g500);flex-shrink:0">(${gpxTotalKm.toFixed(1)}km)</span>
@@ -827,7 +827,7 @@ function renderRooms(rooms){
         for(let i=1;i<=minIdx;i++)
           acc+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
         const pct=Math.min(100,Math.round(acc/gpxTotalKm*100));
-        row4=`<div class="rmeta2" style="margin-top:2px">
+        row4=`<div class="rmeta2" style="margin-top:1px">
           <span style="color:var(--orange);font-weight:700">선두 ${acc.toFixed(1)}km</span>
           <span style="color:var(--g300)">·</span>
           <span style="font-weight:600">진행률 ${pct}%</span>
@@ -838,7 +838,7 @@ function renderRooms(rooms){
     return`<div class="rcard${amIIn?' rcard-mine':''}">
       <div class="rinfo">
         <div class="rname" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${r.name}${mine?' 👑':''}${statusIcon}</div>
-        <div class="rmeta2" style="margin-top:3px">
+        <div class="rmeta2" style="margin-top:1px">
           <span>참가자 : <b>${cnt}명</b></span>
           <span style="color:var(--g300)">·</span>
           <span>경과 : <b>${elapsedTxt}</b></span>
