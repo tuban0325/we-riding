@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#FF6B35">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>WE 라이딩</title>
+<title>수성철인클럽 라이딩</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -29,7 +29,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 #sl{background:linear-gradient(160deg,#1A1A18 0%,#2C2C2A 60%,#1A1A18 100%);align-items:center;justify-content:center;padding:40px 20px;position:relative;overflow:hidden;gap:0}
 #sl::before{content:'';position:absolute;top:-80px;right:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(255,107,53,.18) 0%,transparent 70%);pointer-events:none}
 .logo{font-size:48px;margin-bottom:6px}
-.brand{font-size:26px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:4px}
+.brand{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:4px}
 .brand span{color:var(--orange)}
 .sub{font-size:13px;color:var(--g300);margin-bottom:32px;text-align:center}
 .lcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px 24px;width:100%;max-width:360px}
@@ -334,8 +334,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 <!-- ══ 로그인 ══ -->
 <div class="screen" id="sl">
   <div class="logo">🚴</div>
-  <div class="brand">WE <span>Riding</span></div>
-  <div class="sub">팀원들과 실시간 위치 공유</div>
+  <div class="brand">수성철인클럽 <span>라이딩</span></div>
+  <div class="sub">수성철인클럽 실시간 위치 공유</div>
   <div class="lcard" id="ls1">
     <label>라이딩에서 표시될 이름</label>
     <div class="nrow">
@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.623</div>
+    <div class="version-info-inline">v1.624</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -353,7 +353,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="fbsetup-card">
     <div class="fbsetup-title">🔥 Firebase 설정</div>
     <div class="fbsetup-desc">
-      WE Riding을 초기화하기 위해 프로젝트 ID가 필요합니다.<br>
+      수성철인클럽 라이딩을 초기화하기 위해 프로젝트 ID가 필요합니다.<br>
       기본값은 "we-riding"입니다.
     </div>
     <div class="fbi-group">
@@ -2088,7 +2088,7 @@ function showLocalNotification(title, body, type='normal') {
     body,
     icon: './icon-192.png',
     badge: './icon-192.png',
-    tag: type === 'sos' ? 'sos-alert' : 'we-riding',
+    tag: type === 'sos' ? 'sos-alert' : 'suseong-riding',
     renotify: true,
     requireInteraction: type === 'sos', // SOS는 확인 전까지 유지
     vibrate: type === 'sos' ? [300,100,300,100,300] : [200,100,200],
