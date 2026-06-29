@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.635</div>
+    <div class="version-info-inline">v1.636</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -1116,14 +1116,25 @@ window.createRoom=async function(){
   const id=uid();
   const {ref,set}=window._fb;
   const now_=Date.now();
+  const sessionKey=Math.random().toString(36).slice(2,10);
+  save('sessionKey',sessionKey);
+  const myIp=load('cachedIp')||'unknown';
   try{
-    // 방 생성 (멤버는 joinRoom에서 등록)
+    // 방 생성과 동시에 방장을 members에 포함 (단일 set → 원자적)
+    const members={};
+    members[S.user.id]={
+      name:S.user.name,color:S.user.color,
+      lat:null,lng:null,speed:0,ts:now_,
+      sessionKey,ip:myIp
+    };
     await set(ref(db,`rooms/${id}`),{
       id,name,ownerId:S.user.id,
-      createdAt:now_,lastActivity:now_,members:{}
+      createdAt:now_,lastActivity:now_,
+      members
     });
     $('rni').value='';
-    // 안내 팝업 표시 후 확인 시 입장
+    // 안내 팝업 후 입장 (joinRoom이 멤버 재등록하지 않도록 플래그)
+    window._createdRoomId=id;
     showCreateNotice(name,id);
   }catch(e){
     toast('❌ 방 만들기 실패. 다시 시도해주세요');
@@ -1239,15 +1250,19 @@ window.joinRoom=async function(roomId){
   // ── IP 가져오기 (로그인 시 캐시된 값 사용)
   const myIp = load('cachedIp') || 'unknown';
 
-  // ── 세션키 생성 + 멤버 등록 (IP 포함)
-  const newSessionKey = Math.random().toString(36).slice(2,10);
-  save('sessionKey', newSessionKey);
-  await set(ref(db,`rooms/${roomId}/members/${S.user.id}`),{
-    name:S.user.name, color:S.user.color,
-    lat:null, lng:null, speed:0, ts:Date.now(),
-    sessionKey:newSessionKey,
-    ip: myIp || 'unknown'
-  });
+  // ── 세션키 생성 + 멤버 등록 (createRoom에서 이미 등록된 경우 건너뜀)
+  const roomSnap2 = await get(ref(db,`rooms/${roomId}/members/${S.user.id}`));
+  const alreadyMember = roomSnap2.exists();
+  if(!alreadyMember){
+    const newSessionKey = Math.random().toString(36).slice(2,10);
+    save('sessionKey', newSessionKey);
+    await set(ref(db,`rooms/${roomId}/members/${S.user.id}`),{
+      name:S.user.name, color:S.user.color,
+      lat:null, lng:null, speed:0, ts:Date.now(),
+      sessionKey:newSessionKey,
+      ip: myIp || 'unknown'
+    });
+  }
 
   onValue(ref(db,`rooms/${roomId}`),snap=>{if(snap.exists()){const d=snap.val();S.room={...d,id:roomId};S.isOwner=d.ownerId===S.user.id;}},{onlyOnce:true});
   S.room={id:roomId,name:'라이딩',ownerId:''};
