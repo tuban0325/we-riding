@@ -344,7 +344,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.653</div>
+    <div class="version-info-inline">v1.654</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -730,10 +730,10 @@ async function init(){
 // ── 홈
 function renderHome(){
   // 홈 화면 첫 진입 시 안내 팝업 표시 (1회만)
-  if(!sessionStorage.getItem('joinNoticeSeen')){
-    sessionStorage.setItem('joinNoticeSeen','1');
-    setTimeout(()=>showJoinNotice(), 500);
-  }
+  // if(!sessionStorage.getItem('joinNoticeSeen')){
+  //   sessionStorage.setItem('joinNoticeSeen','1');
+  //   setTimeout(()=>showJoinNotice(), 500);
+  // }
   $('uname').textContent=S.user.name;
   // 로그아웃 버튼은 고정 (색상/텍스트 변경 안 함)
   
@@ -1087,14 +1087,16 @@ window.createRoom=async function(){
       members
     });
     $('rni').value='';
-    // 최초 1회만 안내 팝업 표시, 이후엔 바로 입장
-    if(!localStorage.getItem('WE_createNoticeSeen')){
-      sessionStorage.setItem('joinNoticeSeen','1'); // 라이딩 시작 안내 중복 방지
-      showCreateNotice(name,id);
-    } else {
-      toast(`✅ "${name}" 방이 생성됐어요!`,2000);
-      joinRoom(id);
-    }
+    // 팝업 비활성화 (테스트 중)
+    toast(`✅ "${name}" 방이 생성됐어요!`,2000);
+    joinRoom(id);
+    // if(!localStorage.getItem('WE_createNoticeSeen')){
+    //   sessionStorage.setItem('joinNoticeSeen','1');
+    //   showCreateNotice(name,id);
+    // } else {
+    //   toast(`✅ "${name}" 방이 생성됐어요!`,2000);
+    //   joinRoom(id);
+    // }
   }catch(e){
     toast('❌ 방 만들기 실패. 다시 시도해주세요');
     console.error('createRoom error:',e);
