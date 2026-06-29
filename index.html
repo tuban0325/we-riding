@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.624</div>
+    <div class="version-info-inline">v1.625</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -396,7 +396,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div id="map"></div>
   <div class="hud">
     <div class="hud-inner">
-      <button class="btn-back" onclick="leaveRoom()">← 나가기</button>
+      <button class="btn-back" onclick="onLeaveRoom()">← 나가기</button>
       <div class="rnm" id="rnm">라이딩</div>
       <button class="btn-gpx-hud" id="btn-gpx-hud" onclick="openGpxModal()" title="GPX 코스 등록">🗺️</button>
       <button class="btn-members" id="btn-members" onclick="toggleMemberPanel()">👥 <span id="mbadge">1명</span></button>
@@ -1747,6 +1747,19 @@ window.fitAll=function(){
   if(btn){ btn.style.background='rgba(255,107,53,.85)'; btn.style.opacity='1'; setTimeout(()=>{ btn.style.background=''; btn.style.opacity=''; },1000); }
   if(pts.length>1){ S.followMe=false; updateFollowMeBtn(false); S.map.fitBounds(pts,{padding:[60,60]}); }
   else window.centerMe();
+};
+
+window.onLeaveRoom=function(){
+  if(!S.room||!S.user){ leaveRoom(false); return; }
+  const members=S.room?.members||{};
+  const others=Object.keys(members).filter(u=>u!==S.user.id);
+  const isOwner=S.room.ownerId===S.user.id;
+  if(isOwner&&others.length===0){
+    if(!confirm('방에 혼자 계십니다. 나가면 방이 삭제됩니다. 나가시겠습니까?')) return;
+  } else {
+    if(!confirm('라이딩 방에서 나가시겠습니까?')) return;
+  }
+  leaveRoom(false);
 };
 
 window.leaveRoom=async function(forced=false){
