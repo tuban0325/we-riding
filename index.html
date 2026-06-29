@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.625</div>
+    <div class="version-info-inline">v1.626</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -781,6 +781,11 @@ async function init(){
 // ╚══════════════════════════════════════════════════════╝
 // ── 홈
 function renderHome(){
+  // 홈 화면 첫 진입 시 안내 팝업 표시 (1회만)
+  if(!sessionStorage.getItem('joinNoticeSeen')){
+    sessionStorage.setItem('joinNoticeSeen','1');
+    setTimeout(()=>showJoinNotice(), 500);
+  }
   $('uname').textContent=S.user.name;
   // 로그아웃 버튼은 고정 (색상/텍스트 변경 안 함)
   
@@ -1158,7 +1163,6 @@ window.joinRoom=async function(roomId){
   screen('sr');
   $('rnm').textContent=S.room.name;
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
-  showJoinNotice();
   startSWSOSCheck(roomId);
   setTimeout(()=>{
     initMap();drawGpx();startTracking(roomId);startSync(roomId);
