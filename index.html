@@ -344,7 +344,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.647</div>
+    <div class="version-info-inline">v1.648</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -679,26 +679,21 @@ window.doLogin=async function(){
   const id=saved?.id||uid();
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
 
-  // 시작 즉시 버튼 비활성화 + 로딩 표시
   const btn=$('btn-go');
   btn.disabled=true;
-  btn.textContent='확인 중...';
+  btn.textContent='연결 중...';
 
   try{
-    // Firebase 미연결 시 자동 연결
+    // Firebase 연결
     if(!S.fbConn){
-      loaderTxt('Firebase 연결 중...');
-      $('lov').classList.remove('hidden');
       const ok=await initFb('we-riding');
-      hideLoader();
       if(ok){ S.fbConn=true; save('fbProjectId','we-riding'); }
       else { toast('❌ 연결 실패. 잠시 후 다시 시도해주세요'); return; }
     }
 
-    // IP 가져오기
-    loaderTxt('준비 중...');
-    $('lov').classList.remove('hidden');
-    let myIp = load('cachedIp') || null;
+    // IP 가져오기 (캐시 우선, 실패해도 계속)
+    btn.textContent='확인 중...';
+    let myIp=load('cachedIp')||null;
     if(!myIp){
       try{
         const res=await Promise.race([
@@ -712,7 +707,6 @@ window.doLogin=async function(){
     }
 
     // 이름 중복 확인
-    loaderTxt('이름 확인 중...');
     if(S.fbConn&&window._fb){
       try{
         const {ref:_ref,get:_get}=window._fb;
@@ -727,34 +721,26 @@ window.doLogin=async function(){
             if(m.name!==name) continue;
             const isStale=now_-(m.ts||0)>20000;
             const isSameIp=myIp&&m.ip&&myIp===m.ip;
-            if(!isStale&&!isSameIp){
-              conflict={ roomId, uid:uid_, member:m };
-              break;
-            }
+            if(!isStale&&!isSameIp){ conflict=true; break; }
           }
           if(conflict) break;
         }
         if(conflict){
-          hideLoader();
-          toast(`⚠️ "${name}" 이름을 사용 중인 팀원이 있어요. 다른 이름을 사용해주세요.`, 4000);
+          toast(`⚠️ "${name}" 이름을 사용 중인 팀원이 있어요. 다른 이름을 사용해주세요.`,4000);
           return;
         }
       }catch(e){}
     }
 
-    // 로그인 처리
-    loaderTxt('로그인 중...');
+    // 로그인 완료
     S.user={id,name,color:getColor(ci)};
     save('ci',ci);
     save('user',{id,name});
-    hideLoader();
 
     if(window._pendingRoom){ tryJoinPendingRoom(); return; }
     renderHome(); screen('sh');
 
   } finally {
-    // 항상 버튼 복원
-    hideLoader();
     btn.disabled=false;
     btn.textContent='시작 →';
   }
