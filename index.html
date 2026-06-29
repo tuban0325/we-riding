@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.636</div>
+    <div class="version-info-inline">v1.637</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -875,6 +875,12 @@ function renderRooms(rooms){
         leadDistHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">선두 ${lead.speed.toFixed(1)}km/h</span>${leadProgHtml}`;
       }
     }
+
+    // 내가 참여 중인지, 진행 중인지 확인
+    const amIIn=r.members&&r.members[S.user?.id];
+    const isActive=Object.values(r.members||{}).some(m=>(m.speed||0)>0.5);
+    const activeIcon=isActive?'<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>':'';
+    const myBadge=amIIn?'<span style="font-size:11px;color:var(--orange);font-weight:700;background:rgba(255,107,53,.1);padding:2px 7px;border-radius:10px;border:1px solid rgba(255,107,53,.3)">참여 중</span>':'';
 
     return`<div class="rcard${amIIn?' rcard-mine':''}">
       <div class="rico">🚴</div>
