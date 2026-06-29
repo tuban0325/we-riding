@@ -347,7 +347,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.656</div>
+    <div class="version-info-inline">v1.657</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -403,7 +403,6 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-back" onclick="onLeaveRoom()">← 나가기</button>
       <div class="rnm" id="rnm">라이딩</div>
       <button class="btn-gpx-hud" id="btn-gpx-hud" onclick="openGpxModal()" title="GPX 코스 등록">🗺️</button>
-      <button class="btn-members" id="btn-members" onclick="toggleMemberPanel()">👥 <span id="mbadge">1명</span></button>
       <button class="btn-sh" onclick="openSS()">🔗</button>
       <button class="btn-ride-status" id="btn-ride-status" onclick="onRideStatusBtn()"></button>
     </div>
@@ -433,7 +432,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     <button class="mbtn mbtn-sos" id="btn-sos" onclick="onSOS()" title="긴급 도움 요청" style="margin-bottom:15px">🆘</button>
     <button class="mbtn" id="btn-course-info" onclick="openCourseInfo()" title="코스 정보" style="opacity:.3;display:none">📊</button>
     <button class="mbtn" id="btn-center-me" onclick="centerMe()">📍</button>
-    <button class="mbtn" id="btn-fit-all" onclick="fitAll()">👥</button>
+    <button class="mbtn" id="btn-fit-all" onclick="fitAll()">🔍</button>
+    <button class="mbtn" id="btn-members" onclick="toggleMemberPanel()" title="팀원 현황">👥<br><span id="mbadge" style="font-size:9px;line-height:1">1명</span></button>
     <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계" style="opacity:.6">⚡</button>
   </div>
 
@@ -780,12 +780,15 @@ function renderRooms(rooms){
     const amIIn=!!(r.members&&r.members[S.user?.id]);
 
     // ── 1줄: 상태 아이콘
-    const maxSpd=Math.max(...allMembers.map(m=>m.speed||0),0);
+    // 방 status 기준으로 상태 아이콘 결정
+    const roomStatus=r.status||'waiting';
     let statusIcon='';
-    if(maxSpd>0.5)
+    if(roomStatus==='riding')
       statusIcon='<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>';
-    else if(cnt>0)
+    else if(roomStatus==='paused')
       statusIcon='<span style="font-size:11px;color:#888;font-weight:700;background:rgba(136,136,136,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(136,136,136,.3)">☕ 휴식 중</span>';
+    else if(roomStatus==='waiting')
+      statusIcon='<span style="font-size:11px;color:var(--orange);font-weight:700;background:rgba(255,107,53,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(255,107,53,.3)">⏸ 대기 중</span>';
 
     // ── 2줄: 참가자 · 경과시간
     const elapsedMin=Math.floor((now-(r.createdAt||0))/60000);
@@ -1485,9 +1488,9 @@ function simPos(roomId){
 
 // ── 마커
 function mkrIcon(name,color,isMe){
-  const s=isMe?44:36;
-  const txt=name.substring(0,2);
-  const fontSize=isMe?13:11;
+  const s=isMe?46:38;
+  const txt=name.substring(0,3); // 3글자
+  const fontSize=isMe?12:10;
 
   // 색상 밝기 계산 → 어두운 배경엔 흰글자, 밝은 배경엔 검정글자
   const hex=color.replace('#','');
@@ -1519,7 +1522,7 @@ function mkrIcon(name,color,isMe){
 
   const html=`<div style="position:relative;width:${s}px;height:${s}px;">
     <div style="
-      width:${s}px;height:${s}px;border-radius:50%;
+      width:${s}px;height:${s}px;border-radius:8px;
       background:${color};${ring};
       border:2.5px solid #fff;
       display:flex;align-items:center;justify-content:center;
