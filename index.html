@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.640</div>
+    <div class="version-info-inline">v1.641</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -854,25 +854,23 @@ function renderRooms(rooms){
         </div>`
       :'';
 
-    // 선두 속도 + 진행 거리
+    // 선두 진행 거리
     let leadDistHtml='';
     if(mems.length>0){
       const lead=mems.sort((a,b)=>(b.speed||0)-(a.speed||0))[0];
-      if(lead.speed>0.5){
-        let leadProgHtml='';
-        if(hasGpx&&lead.lat&&lead.lng){
-          // 선두의 GPX 경로상 진행 거리
-          const pts=r.gpx;
-          let minD=999,minIdx=0;
-          for(let i=0;i<pts.length;i++){
-            const d=hav(lead.lat,lead.lng,pts[i].lat,pts[i].lng);
-            if(d<minD){minD=d;minIdx=i;}
-          }
-          let acc=0;
-          for(let i=1;i<=minIdx;i++) acc+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
-          leadProgHtml=`<span style="color:var(--g500)">· 진행 ${acc.toFixed(1)}km</span>`;
+      if(lead.lat&&lead.lng&&hasGpx){
+        const pts=r.gpx;
+        let minD=999,minIdx=0;
+        for(let i=0;i<pts.length;i++){
+          const d=hav(lead.lat,lead.lng,pts[i].lat,pts[i].lng);
+          if(d<minD){minD=d;minIdx=i;}
         }
-        leadDistHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">선두 ${lead.speed.toFixed(1)}km/h</span>${leadProgHtml}`;
+        let acc=0;
+        for(let i=1;i<=minIdx;i++) acc+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
+        if(acc>0) leadDistHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">선두 ${acc.toFixed(1)}km</span>`;
+      } else if(lead.speed>0.5){
+        // GPX 없으면 속도만 표시
+        leadDistHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">선두 ${lead.speed.toFixed(1)}km/h</span>`;
       }
     }
 
