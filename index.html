@@ -96,16 +96,16 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .btn-cr:disabled{background:#ccc;color:#999;cursor:not-allowed}
 
 /* 방 목록 */
-.rlist{display:flex;flex-direction:column;gap:10px}
-.rcard{background:#fff;border-radius:var(--r);padding:10px 10px;display:flex;align-items:center;gap:10px;border:1px solid var(--g100)}.rcard-mine{border:1.5px solid rgba(255,107,53,.4);background:#fffcfb}
+.rlist{display:flex;flex-direction:column;gap:8px}
+.rcard{background:#fff;border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid var(--g100)}.rcard-mine{border:1.5px solid rgba(255,107,53,.4);background:#fffcfb}
 .rinfo{flex:1;min-width:0;overflow:hidden}
-.rname{font-size:20px;font-weight:800;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--g900)}  // 방이름
-.rmeta{font-size:14px;color:var(--g500);display:flex;align-items:center;gap:6px}  //2번째줄
-.rmeta2{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:5px;margin-top:5px} //3,4번째줄
+.rname{font-size:19px;font-weight:800;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--g900)}
+.rmeta{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:6px;margin-top:0}
+.rmeta2{font-size:12px;color:var(--g500);display:flex;align-items:center;gap:5px;margin-top:3px}
 .ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 .racts{display:flex;gap:6px;flex-shrink:0}
-.btn-join{padding:20px 24px;background:var(--orange);color:#fff;font-family:var(--font);font-size:17px;font-weight:700;border:none;border-radius:12px;cursor:pointer}  // 입장버튼
+.btn-join{padding:16px 24px;background:var(--orange);color:#fff;font-family:var(--font);font-size:17px;font-weight:700;border:none;border-radius:12px;cursor:pointer}
 .btn-del{padding:7px 10px;background:#FFF0F0;color:var(--red);font-family:var(--font);font-size:13px;font-weight:700;border:1px solid rgba(231,76,60,.2);border-radius:8px;cursor:pointer}
 .empt{text-align:center;padding:32px 20px;color:var(--g500);font-size:14px}
 .empt .em{font-size:36px;display:block;margin-bottom:10px}
