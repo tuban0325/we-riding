@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.637</div>
+    <div class="version-info-inline">v1.639</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -850,7 +850,7 @@ function renderRooms(rooms){
       ?`<div style="font-size:11px;color:var(--blue);margin-top:3px;display:flex;align-items:center;gap:4px">
           <span>🗺️</span>
           <span style="font-weight:600">${gpxName||'GPX 코스'}</span>
-          <span style="color:var(--g500)">· ${gpxTotalKm.toFixed(1)}km</span>
+          <span style="color:var(--g500)">(${gpxTotalKm.toFixed(1)}km)</span>
         </div>`
       :'';
 
@@ -1925,6 +1925,10 @@ window.leaveRoom=async function(forced=false){
   $('ab-behind').classList.remove('show');
   $('ab-gpxdev').classList.remove('show');
   S.gpxPoints=[];S.gpxAlert=0;S.followMe=false;_inactivityWarn=false;_arrivalAlerted=false;_sosSeen={};stopSosVibration();
+  // 내 SOS 데이터 삭제 (방 나갈 때)
+  if(S.room&&S.user&&window._fb){
+    try{window._fb.remove(window._fb.ref(db,`rooms/${S.room.id}/sos/${S.user.id}`)).catch(()=>{});}catch(e){}
+  }
   if(S._gpxMarkers){S._gpxMarkers.forEach(m=>{try{S.map?.removeLayer(m);}catch(e){}});S._gpxMarkers=[];}
   if(S.gpxLayer){try{S.map?.removeLayer(S.gpxLayer);}catch(e){}S.gpxLayer=null;}
   if(S.map){try{S.map.remove();}catch(e){}S.map=null;}
@@ -2178,8 +2182,10 @@ window.doLogout=async function(){
   if(S.statTmr)clearInterval(S.statTmr);
   S.room=null; S.user=null; S.fbConn=false;
 
+  const logoutName=S.user?.name||'';
   ['user','ci','fbProjectId'].forEach(k=>localStorage.removeItem('WE_'+k));
-  // 로그아웃 시 페이지 새로고침 → 깔끔한 초기 상태
+  // 이름은 sessionStorage에 임시 보관 → 새로고침 후 자동 입력
+  if(logoutName) sessionStorage.setItem('lastLoginName',logoutName);
   location.reload();
 };
 
