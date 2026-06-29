@@ -214,6 +214,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .mbtn.on{background:rgba(255,107,53,.85);opacity:1!important}
 .mbtn.on:active{background:rgba(200,80,20,.9)}
 .mbtn-sos{background:rgba(231,76,60,.9);animation:sos-pulse 2s infinite}
+.mbtn-panel{border:1.5px solid rgba(255,255,255,.25)!important;flex-direction:column;gap:1px;font-size:15px!important;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.3)}
 .mbtn-sos:active{background:#c0392b}
 @keyframes sos-pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.6)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
 .abar.sos{
@@ -347,7 +348,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.657</div>
+    <div class="version-info-inline">v1.658</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -433,7 +434,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
     <button class="mbtn" id="btn-course-info" onclick="openCourseInfo()" title="코스 정보" style="opacity:.3;display:none">📊</button>
     <button class="mbtn" id="btn-center-me" onclick="centerMe()">📍</button>
     <button class="mbtn" id="btn-fit-all" onclick="fitAll()">🔍</button>
-    <button class="mbtn" id="btn-members" onclick="toggleMemberPanel()" title="팀원 현황">👥<br><span id="mbadge" style="font-size:9px;line-height:1">1명</span></button>
+    <button class="mbtn mbtn-panel" id="btn-members" onclick="toggleMemberPanel()" title="팀원 현황">👥<br><span id="mbadge" style="font-size:9px;line-height:1">1명</span></button>
     <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계" style="opacity:.6">⚡</button>
   </div>
 
@@ -1242,8 +1243,9 @@ window.joinRoom=async function(roomId){
     const mpBtn=$('btn-members');
     if(mpPanel&&mpBtn){
       const isHidden=mpPanel.classList.contains('hidden');
-      mpBtn.style.background=isHidden?'rgba(255,255,255,.12)':'rgba(255,107,53,.85)';
-      mpBtn.style.opacity=isHidden?'.6':'1';
+      mpBtn.style.background=isHidden?'rgba(255,255,255,.08)':'rgba(255,107,53,.85)';
+      mpBtn.style.opacity='1';
+      mpBtn.style.border=isHidden?'1.5px solid rgba(255,255,255,.25)':'1.5px solid transparent';
     }
   },80);
 };
@@ -1933,9 +1935,10 @@ window.toggleMemberPanel=function(){
   const panel=$('mp-panel');
   const btn=$('btn-members');
   const hidden=panel.classList.toggle('hidden');
-  // 패널 숨김(hidden=true) → 버튼 흐리게 / 보임 → 주황 활성
-  btn.style.background=hidden?'rgba(255,255,255,.12)':'rgba(255,107,53,.85)';
-  btn.style.opacity=hidden?'.6':'1';
+  // 패널 숨김 → 연한 사각형 배경(테두리) / 보임 → 주황 활성
+  btn.style.background=hidden?'rgba(255,255,255,.08)':'rgba(255,107,53,.85)';
+  btn.style.opacity='1';
+  btn.style.border=hidden?'1.5px solid rgba(255,255,255,.25)':'1.5px solid transparent';
 };
 window.flyTo=function(lat,lng){
   if(S.map&&lat&&lng){
