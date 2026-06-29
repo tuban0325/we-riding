@@ -344,7 +344,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.643</div>
+    <div class="version-info-inline">v1.645</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -370,7 +370,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="hhead">
     <div class="hrow">
       <div class="hgreet">안녕하세요, <span id="uname">라이더</span>님 👋</div>
-      <button class="avbtn" id="uav" onclick="doLogout()">⏻ 로그아웃</button>
+      <button class="avbtn" id="uav" onclick="doLogout()">로그아웃</button>
     </div>
   </div>
   <div class="hbody">
@@ -859,9 +859,14 @@ function renderRooms(rooms){
 
     // 내가 참여 중인지, 진행 중인지 확인
     const amIIn=r.members&&r.members[S.user?.id];
-    const isActive=Object.values(r.members||{}).some(m=>(m.speed||0)>0.5);
-    const activeIcon=isActive?'<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>':'';
-    const myBadge=amIIn?'<span style="font-size:11px;color:var(--orange);font-weight:700;background:rgba(255,107,53,.1);padding:2px 7px;border-radius:10px;border:1px solid rgba(255,107,53,.3)">참여 중</span>':'';
+    const allSpeeds2=Object.values(r.members||{}).map(m=>m.speed||0);
+    const maxSpeed2=Math.max(...allSpeeds2,0);
+    const isActive=maxSpeed2>0.5;
+    const isResting=allSpeeds2.length>0&&maxSpeed2<=0.5;
+    let statusIcon='';
+    if(isActive) statusIcon='<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>';
+    else if(isResting) statusIcon='<span style="font-size:11px;color:#888;font-weight:700;background:rgba(136,136,136,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(136,136,136,.3)">☕ 휴식 중</span>';
+    const progressHtml=''; // 진행률은 4번째 줄에서 표시
 
     // 4번째 줄: 경과시간 + 선두 GPX 진행 거리
     const elapsedMin=Math.floor((now-(r.createdAt||0))/60000);
