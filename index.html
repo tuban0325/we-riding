@@ -341,7 +341,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.619</div>
+    <div class="version-info-inline">v1.620</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -1109,22 +1109,27 @@ window.joinRoom=async function(roomId){
     const existingIp = existingMember.ip || null;
     const isSameIp = myIp && existingIp && myIp === existingIp;
     const now_ = Date.now();
-    const lastTs = existingMember.ts || 0;
-    const isStale = now_ - lastTs > 20000; // 20초 이상 미업데이트 = 연결 끊김 🔴
+    const isStale = now_ - (existingMember.ts||0) > 20000; // 🔴 연결 끊김
 
-    if(isStale){
-      // 🔴 연결 끊긴 상태 → 같은 사람 재접속으로 판단 → 자동 전환 (확인 없음)
+    if(isStale || isSameIp){
+      // 🔴 연결 끊김 or 같은 IP → 동일 사용자 재접속
+      // 기존 세션 방 나가기 + 로그아웃 처리 (Firebase에서 제거)
+      const {ref:_ref, remove:_remove, update:_update} = window._fb;
+      const existingMembers = (await get(_ref(db,`rooms/${roomId}`))).val()?.members||{};
+      const others = Object.keys(existingMembers).filter(u=>u!==existingUid);
+      const isExistingOwner = roomData.ownerId === existingUid;
+      const upd = {};
+      if(isExistingOwner && others.length > 0) upd[`rooms/${roomId}/ownerId`] = others[0];
+      upd[`rooms/${roomId}/members/${existingUid}`] = null;
+      await _update(_ref(db), upd).catch(()=>{});
       toast('📱 이전 연결을 정리하고 입장합니다.', 2000);
-      await set(ref(db,`rooms/${roomId}/members/${existingUid}`), null).catch(()=>{});
-    } else if(isSameIp){
-      // 🟢 활성 + 같은 IP → 같은 기기 다른 브라우저 → 자동 전환
-      toast('📱 다른 브라우저에서 접속 중이었어요. 이 기기로 전환합니다.', 3000);
-      await set(ref(db,`rooms/${roomId}/members/${existingUid}`), null).catch(()=>{});
     } else {
-      // 🟢 활성 + 다른 IP → 진짜 다른 기기에서 활성 중 → 확인 팝업
-      const ok = confirm(`"${S.user.name}"님이 다른 기기에서 라이딩 중입니다.\n이 기기로 전환할까요?`);
-      if(!ok) return;
-      await set(ref(db,`rooms/${roomId}/members/${existingUid}`), null).catch(()=>{});
+      // 🟢 활성 + 다른 IP → 다른 사용자
+      toast(`⚠️ "${S.user.name}" 이름을 사용 중인 팀원이 있어요. 다른 이름으로 변경해주세요.`, 4000);
+      // 로그인 화면으로 돌아가기
+      screen('sl');
+      setTimeout(()=>{ $('ni').value=''; $('ni').focus(); },300);
+      return;
     }
   }
 
@@ -1503,7 +1508,7 @@ function renderPanel(members,ownerId){
       <div class="rank">${rankTxt}</div>
       <div class="mav" style="background:${m.color||'#888'}">${isOwn?'<span class="crown">👑</span>':''}${(m.name||'?')[0]}</div>
       <div class="md">
-        <div class="mnrow"><span class="mn">${m.name}${stale?' 🔴':''}</span>${isMe?'<span class="mybadge">나</span>':''}${nameCounts[m.name]>1?`<span style="font-size:9px;color:var(--g500);margin-left:3px">(${getIpSuffix(m.ip)})</span>`:''}</div>
+        <div class="mnrow"><span class="mn">${m.name}${stale?' 🔴':''}</span>${isMe?'<span class="mybadge">나</span>':''}</div>
         <div class="mspd">속도 <span>${(m.speed||0).toFixed(1)} km/h</span></div>
       </div>${gapHtml}
     </div>`;
