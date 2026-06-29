@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.639</div>
+    <div class="version-info-inline">v1.640</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -988,7 +988,7 @@ window.loadGpxInRoom=function(input){
         const {ref,set,update}=window._fb;
         const upd={};
         upd[`rooms/${S.room.id}/gpx`]=points;
-        upd[`rooms/${S.room.id}/gpxName`]=file.name.replace('.gpx','').replace(/_/g,' ');
+        upd[`rooms/${S.room.id}/gpxName`]=file.name.replace(/_/g,' ');
         await update(ref(db),upd);
       }
       S.gpxPoints=points;
@@ -1373,6 +1373,7 @@ function startSync(roomId){
   if(roomListener){roomListener();roomListener=null;}
   const {ref,onValue}=window._fb;
   let prevOwnerId=null;
+  const joinedAt=Date.now(); // 방 입장 시각
   roomListener=onValue(ref(db,`rooms/${roomId}`),snap=>{
     if(!snap.exists()){
       toast('🏁 라이딩이 종료됐어요');
