@@ -102,6 +102,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .rinfo{flex:1;min-width:0}
 .rname{font-size:15px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rmeta{font-size:12px;color:var(--g500);display:flex;align-items:center;gap:6px}
+.rmeta2{font-size:11px;color:var(--g500);display:flex;align-items:center;gap:6px;margin-top:3px}
 .ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 .racts{display:flex;gap:6px;flex-shrink:0}
@@ -343,7 +344,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.641</div>
+    <div class="version-info-inline">v1.643</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -854,11 +855,23 @@ function renderRooms(rooms){
         </div>`
       :'';
 
-    // 선두 진행 거리
-    let leadDistHtml='';
-    if(mems.length>0){
+    let leadDistHtml=""; // 선두 정보는 4번째 줄에서 처리
+
+    // 내가 참여 중인지, 진행 중인지 확인
+    const amIIn=r.members&&r.members[S.user?.id];
+    const isActive=Object.values(r.members||{}).some(m=>(m.speed||0)>0.5);
+    const activeIcon=isActive?'<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>':'';
+    const myBadge=amIIn?'<span style="font-size:11px;color:var(--orange);font-weight:700;background:rgba(255,107,53,.1);padding:2px 7px;border-radius:10px;border:1px solid rgba(255,107,53,.3)">참여 중</span>':'';
+
+    // 4번째 줄: 경과시간 + 선두 GPX 진행 거리
+    const elapsedMin=Math.floor((now-(r.createdAt||0))/60000);
+    const elapsedHtml=elapsedMin<60
+      ?`<span>⏱️ ${elapsedMin}분 경과</span>`
+      :`<span>⏱️ ${Math.floor(elapsedMin/60)}시간 ${elapsedMin%60}분 경과</span>`;
+    let leadGpxHtml='';
+    if(hasGpx&&mems.length>0){
       const lead=mems.sort((a,b)=>(b.speed||0)-(a.speed||0))[0];
-      if(lead.lat&&lead.lng&&hasGpx){
+      if(lead.lat&&lead.lng){
         const pts=r.gpx;
         let minD=999,minIdx=0;
         for(let i=0;i<pts.length;i++){
@@ -867,25 +880,18 @@ function renderRooms(rooms){
         }
         let acc=0;
         for(let i=1;i<=minIdx;i++) acc+=hav(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
-        if(acc>0) leadDistHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">선두 ${acc.toFixed(1)}km</span>`;
-      } else if(lead.speed>0.5){
-        // GPX 없으면 속도만 표시
-        leadDistHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">선두 ${lead.speed.toFixed(1)}km/h</span>`;
+        if(acc>0) leadGpxHtml=`<span>·</span><span style="color:var(--orange);font-weight:600">📍 선두 ${acc.toFixed(1)}km</span>`;
       }
     }
-
-    // 내가 참여 중인지, 진행 중인지 확인
-    const amIIn=r.members&&r.members[S.user?.id];
-    const isActive=Object.values(r.members||{}).some(m=>(m.speed||0)>0.5);
-    const activeIcon=isActive?'<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>':'';
-    const myBadge=amIIn?'<span style="font-size:11px;color:var(--orange);font-weight:700;background:rgba(255,107,53,.1);padding:2px 7px;border-radius:10px;border:1px solid rgba(255,107,53,.3)">참여 중</span>':'';
+    const row4Html=`<div class="rmeta2">${elapsedHtml}${leadGpxHtml}</div>`;
 
     return`<div class="rcard${amIIn?' rcard-mine':''}">
       <div class="rico">🚴</div>
       <div class="rinfo">
-        <div class="rname" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${r.name}${mine?' 👑':''}${myBadge}${activeIcon}</div>
+        <div class="rname" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${r.name}${mine?' 👑':''}${statusIcon}${progressHtml}</div>
+        <div class="rmeta"><div class="ldot"></div><span>${cnt}명 참여 중</span><span>·</span><span>${ago<1?'방금':ago+'분 전'}</span></div>
         ${gpxHtml}
-        <div class="rmeta"><div class="ldot"></div><span>${cnt}명 참여 중</span><span>·</span><span>${ago<1?'방금':ago+'분 전'}</span>${leadDistHtml}</div>
+        ${row4Html}
       </div>
       <div class="racts">
         <button class="btn-join" onclick="joinRoom('${r.id}')">입장</button>
