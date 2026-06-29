@@ -344,7 +344,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.649</div>
+    <div class="version-info-inline">v1.650</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -676,75 +676,14 @@ $('ni').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
 window.doLogin=async function(){
   const name=$('ni').value.trim();
   if(!name){toast('이름을 입력해주세요');return;}
-
   const saved=load('user');
   const id=saved?.id||uid();
   const ci=load('ci')??Math.floor(Math.random()*COLORS.length);
-
-  const btn=$('btn-go');
-  btn.disabled=true;
-  btn.textContent='연결 중...';
-
-  try{
-    // 1. Firebase 연결
-    if(!S.fbConn){
-      const ok=await initFb('we-riding');
-      if(!ok){ toast('❌ 서버 연결 실패. 잠시 후 다시 시도해주세요'); return; }
-      S.fbConn=true;
-      save('fbProjectId','we-riding');
-    }
-
-    btn.textContent='확인 중...';
-
-    // 2. IP 캐시 (실패해도 계속)
-    if(!load('cachedIp')){
-      try{
-        const res=await Promise.race([
-          fetch('https://api.ipify.org?format=json'),
-          new Promise((_,rej)=>setTimeout(()=>rej(),2000))
-        ]);
-        const d=await res.json();
-        if(d.ip) save('cachedIp',d.ip);
-      }catch(e){}
-    }
-
-    // 3. 이름 중복 확인 (실패해도 로그인 계속)
-    try{
-      const myIp=load('cachedIp')||null;
-      const {ref:_r,get:_g}=window._fb;
-      const snap=await _g(_r(db,'rooms'));
-      const rooms=snap.val()||{};
-      const now_=Date.now();
-      for(const room of Object.values(rooms)){
-        if(!room.members) continue;
-        for(const [uid_,m] of Object.entries(room.members)){
-          if(uid_===id||m.name!==name) continue;
-          const stale=now_-(m.ts||0)>20000;
-          const sameIp=myIp&&m.ip&&myIp===m.ip;
-          if(!stale&&!sameIp){
-            toast(`⚠️ "${name}" 이름을 사용 중인 팀원이 있어요. 다른 이름을 사용해주세요.`,4000);
-            return;
-          }
-        }
-      }
-    }catch(e){ console.warn('이름 중복 확인 실패(계속 진행):',e); }
-
-    // 4. 로그인 완료
-    S.user={id,name,color:getColor(ci)};
-    save('ci',ci);
-    save('user',{id,name});
-
-    if(window._pendingRoom){ tryJoinPendingRoom(); return; }
-    renderHome();
-    screen('sh');
-
-  }catch(e){
-    console.error('doLogin error:',e);
-    toast('❌ 로그인 중 오류가 발생했어요. 다시 시도해주세요.');
-  }finally{
-    btn.disabled=false;
-    btn.textContent='시작 →';
-  }
+  S.user={id,name,color:getColor(ci)};
+  save('user',{id,name});
+  save('ci',ci);
+  if(window._pendingRoom){tryJoinPendingRoom();return;}
+  renderHome();screen('sh');
 };
 async function init(){
   const params=new URLSearchParams(location.search);
