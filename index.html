@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.624</div>
+    <div class="version-info-inline">v1.625</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -396,7 +396,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div id="map"></div>
   <div class="hud">
     <div class="hud-inner">
-      <button class="btn-back" onclick="leaveRoom()">← 나가기</button>
+      <button class="btn-back" onclick="onLeaveRoom()">← 나가기</button>
       <div class="rnm" id="rnm">라이딩</div>
       <button class="btn-gpx-hud" id="btn-gpx-hud" onclick="openGpxModal()" title="GPX 코스 등록">🗺️</button>
       <button class="btn-members" id="btn-members" onclick="toggleMemberPanel()">👥 <span id="mbadge">1명</span></button>
@@ -743,9 +743,43 @@ window.doLogin=async function(){
   // 초대 링크로 왔으면 바로 방 입장
   if(window._pendingRoom){ tryJoinPendingRoom(); return; }
 
-  // 홈으로 이동
-  renderHome(); screen('sh');
+  // 로그인 성공 안내
+  showLoginWelcome(name);
 };
+
+function showLoginWelcome(name){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.innerHTML=`
+    <div style="background:#1a1a18;border-radius:20px;width:100%;max-width:340px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div style="background:var(--orange);padding:20px 24px;display:flex;align-items:center;gap:14px">
+        <div style="font-size:36px">🚴</div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#fff">안녕하세요!</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.85)">${name}님 환영합니다</div>
+        </div>
+      </div>
+      <div style="padding:18px 20px">
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+          <span style="font-size:18px">📋</span>
+          <span style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.5">방 목록에서 <b style="color:#fff">입장</b> 또는 새 방을 만들어 라이딩을 시작하세요.</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+          <span style="font-size:18px">🔗</span>
+          <span style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.5">팀원에게 <b style="color:#fff">초대 링크</b>를 공유하면 바로 참여할 수 있어요.</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0">
+          <span style="font-size:18px">🆘</span>
+          <span style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.5">라이딩 중 긴급 상황 시 <b style="color:#fff">[🆘] 버튼</b>으로 팀원에게 즉시 알릴 수 있어요.</span>
+        </div>
+      </div>
+      <button onclick="this.closest('div[style]').remove();renderHome();screen('sh');"
+        style="width:100%;padding:13px;background:var(--orange);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">
+        시작하기 →
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
 
 // ── 초기화
 async function init(){
@@ -1066,10 +1100,12 @@ window.createRoom=async function(){
   const name=$('rni').value.trim()||`${S.user.name}의 라이딩`;
   const id=uid();
   const {ref,set}=window._fb;
-  const now_=Date.now(); await set(ref(db,`rooms/${id}`),{id,name,ownerId:S.user.id,createdAt:now_,lastActivity:now_,members:{}});
+  const now_=Date.now();
+  await set(ref(db,`rooms/${id}`),{id,name,ownerId:S.user.id,createdAt:now_,lastActivity:now_,members:{}});
   $('rni').value='';
   renderHome();
-  joinRoom(id);
+  // 자동 입장 금지 → 생성 완료 알림만 표시
+  toast(`✅ "${name}" 방이 생성됐어요! 입장 버튼을 눌러 참여하세요.`,4000);
 };
 
 // ── 방 나가기 (홈 목록에서 또는 방 안에서)
@@ -1159,7 +1195,6 @@ window.joinRoom=async function(roomId){
   screen('sr');
   $('rnm').textContent=S.room.name;
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
-  showJoinNotice();
   startSWSOSCheck(roomId);
   setTimeout(()=>{
     initMap();drawGpx();startTracking(roomId);startSync(roomId);
@@ -1748,6 +1783,19 @@ window.fitAll=function(){
   if(btn){ btn.style.background='rgba(255,107,53,.85)'; btn.style.opacity='1'; setTimeout(()=>{ btn.style.background=''; btn.style.opacity=''; },1000); }
   if(pts.length>1){ S.followMe=false; updateFollowMeBtn(false); S.map.fitBounds(pts,{padding:[60,60]}); }
   else window.centerMe();
+};
+
+window.onLeaveRoom=function(){
+  if(!S.room||!S.user) return leaveRoom();
+  const members=S.room?.members||{};
+  const others=Object.keys(members).filter(u=>u!==S.user.id);
+  if(others.length===0){
+    if(!confirm('방에 혼자 계십니다. 나가면 방이 삭제됩니다. 나가시겠습니까?')) return;
+    leaveRoom(false);
+  } else {
+    if(!confirm('라이딩 방에서 나가시겠습니까?')) return;
+    leaveRoom(false);
+  }
 };
 
 window.leaveRoom=async function(forced=false){
