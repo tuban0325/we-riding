@@ -207,6 +207,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 .mctrl{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 60px);z-index:1002;display:flex;flex-direction:column;gap:8px}
 .mbtn{width:40px;height:40px;border-radius:10px;background:rgba(26,26,24,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mbtn:active{background:rgba(255,107,53,.6)}
+.mbtn.on{background:rgba(255,107,53,.85);opacity:1!important}
+.mbtn.on:active{background:rgba(200,80,20,.9)}
 .mbtn-sos{background:rgba(231,76,60,.9);animation:sos-pulse 2s infinite}
 .mbtn-sos:active{background:#c0392b}
 @keyframes sos-pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.6)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
@@ -341,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.621</div>
+    <div class="version-info-inline">v1.622</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -425,8 +427,8 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
   <div class="mctrl">
     <button class="mbtn mbtn-sos" id="btn-sos" onclick="onSOS()" title="긴급 도움 요청" style="margin-bottom:15px">🆘</button>
     <button class="mbtn" id="btn-course-info" onclick="openCourseInfo()" title="코스 정보" style="opacity:.3;display:none">📊</button>
-    <button class="mbtn" onclick="centerMe()">📍</button>
-    <button class="mbtn" onclick="fitAll()">👥</button>
+    <button class="mbtn" id="btn-center-me" onclick="centerMe()">📍</button>
+    <button class="mbtn" id="btn-fit-all" onclick="fitAll()">👥</button>
     <button class="mbtn" id="btn-stats-tog" onclick="toggleStats()" title="속도계" style="opacity:.6">⚡</button>
   </div>
 
@@ -1151,7 +1153,17 @@ window.joinRoom=async function(roomId){
   $('slink').textContent=`${location.origin}${location.pathname}?room=${roomId}`;
   showJoinNotice();
   startSWSOSCheck(roomId);
-  setTimeout(()=>{initMap();drawGpx();startTracking(roomId);startSync(roomId);},80);
+  setTimeout(()=>{
+    initMap();drawGpx();startTracking(roomId);startSync(roomId);
+    // 초기 버튼 상태 설정
+    const mpPanel=$('mp-panel');
+    const mpBtn=$('btn-members');
+    if(mpPanel&&mpBtn){
+      const isHidden=mpPanel.classList.contains('hidden');
+      mpBtn.style.background=isHidden?'rgba(255,255,255,.12)':'rgba(255,107,53,.85)';
+      mpBtn.style.opacity=isHidden?'.6':'1';
+    }
+  },80);
 };
 
 // ╔══════════════════════════════════════════════════════╗
@@ -1165,7 +1177,7 @@ function initMap(){
   const map=L.map(c,{zoomControl:false}).setView([35.8714,128.6014],16);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
   S.map=map;
-  map.on('dragstart',()=>{S.followMe=false;}); // 드래그 시 자동추적 OFF
+  map.on('dragstart',()=>{ S.followMe=false; updateFollowMeBtn(false); });
   setTimeout(()=>{try{map.invalidateSize();}catch(e){}},150);
 }
 function drawGpx(){
@@ -1351,7 +1363,7 @@ function onPos(lat,lng,gspd,roomId){
   if(!S.myMkr){
     S.myMkr=L.marker([lat,lng],{icon:mkrIcon(S.user.name,S.user.color,true),zIndexOffset:1000}).addTo(S.map);
     S.followMe=true; S.map.setView([lat,lng],16);
-    S.followMe=true; // 첫 수신 시 자동 추적 ON
+    updateFollowMeBtn(true); // 첫 수신 시 자동 추적 ON
   } else {
     S.myMkr.setLatLng([lat,lng]);
     // 자동 추적 ON이면 지도 중앙 유지
@@ -1681,12 +1693,21 @@ window.centerMe=function(){
   if(S.myPos&&S.map){
     S.followMe=true;
     S.map.setView([S.myPos.lat,S.myPos.lng],S.map.getZoom(),{animate:true});
-    toast('📍 내 위치 추적 중');
+    updateFollowMeBtn(true);
   } else toast('내 위치 수신 중...');
 };
+function updateFollowMeBtn(on){
+  const btn=$('btn-center-me');
+  if(!btn) return;
+  btn.style.background=on?'rgba(255,107,53,.85)':'rgba(26,26,24,.88)';
+  btn.style.opacity=on?'1':'.6';
+}
 window.fitAll=function(){
   const pts=[...(S.myPos?[[S.myPos.lat,S.myPos.lng]]:[]),...Object.values(S.mkrs).map(m=>[m.getLatLng().lat,m.getLatLng().lng])];
-  if(pts.length>1)S.map.fitBounds(pts,{padding:[60,60]});else window.centerMe();
+  const btn=$('btn-fit-all');
+  if(btn){ btn.style.background='rgba(255,107,53,.85)'; btn.style.opacity='1'; setTimeout(()=>{ btn.style.background=''; btn.style.opacity=''; },1000); }
+  if(pts.length>1){ S.followMe=false; updateFollowMeBtn(false); S.map.fitBounds(pts,{padding:[60,60]}); }
+  else window.centerMe();
 };
 
 window.leaveRoom=async function(forced=false){
@@ -1764,11 +1785,14 @@ window.toggleMemberPanel=function(){
   const panel=$('mp-panel');
   const btn=$('btn-members');
   const hidden=panel.classList.toggle('hidden');
-  btn.style.opacity=hidden?'.5':'1';
+  // 패널 숨김(hidden=true) → 버튼 흐리게 / 보임 → 주황 활성
+  btn.style.background=hidden?'rgba(255,255,255,.12)':'rgba(255,107,53,.85)';
+  btn.style.opacity=hidden?'.6':'1';
 };
 window.flyTo=function(lat,lng){
   if(S.map&&lat&&lng){
-    S.followMe=false; // 팀원 위치로 이동 시 자동추적 OFF
+    S.followMe=false;
+    updateFollowMeBtn(false);
     S.map.flyTo([lat,lng],16,{duration:0.8});
     toast('📍 이동했어요');
   }
