@@ -97,7 +97,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 
 /* 방 목록 */
 .rlist{display:flex;flex-direction:column;gap:10px}
-.rcard{background:#fff;border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid var(--g100)}
+.rcard{background:#fff;border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid var(--g100)}.rcard-mine{border:1.5px solid rgba(255,107,53,.4);background:#fffcfb}
 .rico{width:42px;height:42px;border-radius:12px;background:var(--ol);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .rinfo{flex:1;min-width:0}
 .rname{font-size:15px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -343,7 +343,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.628</div>
+    <div class="version-info-inline">v1.630</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -825,8 +825,7 @@ function renderRooms(rooms){
     if(!r.id||!r.name) return false; // id/name 없는 방 제외
     if(r.closed) return false;
     const memberCnt=Object.keys(r.members||{}).length;
-    // 멤버 0명이어도 5분 이내 생성된 방은 목록에 표시 (방장 입장 전)
-    if(memberCnt===0 && now-(r.createdAt||0)>300000) return false;
+    if(memberCnt===0) return false;
     if(!r.lastActivity) return true; // lastActivity 없으면 활성으로 간주
     if(now-r.lastActivity>HOUR) return false;
     return true;
@@ -1680,7 +1679,7 @@ function startSosVibration(){
   // 즉시 진동 + 소리 + 화면 점멸
   if(navigator.vibrate) navigator.vibrate([500,100,500,100,500,100,500]);
   playSosSound();
-  flashScreen('#FF0000', 8, 100); // 빨간 강한 점멸
+  flashScreen('#FF0000', 8, 200); // 빨간 강한 점멸
   let count=0;
   _sosVibInterval=setInterval(()=>{
     count++;
@@ -1690,7 +1689,7 @@ function startSosVibration(){
     if($('ab-sos').classList.contains('show')){
       if(navigator.vibrate) navigator.vibrate([500,100,500,100,500,100,500]);
       playSosSound();
-      flashScreen('#FF0000', 6, 100);
+      flashScreen('#FF0000', 6, 200);
     } else {
       clearInterval(_sosVibInterval); _sosVibInterval=null;
     }
