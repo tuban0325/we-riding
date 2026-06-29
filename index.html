@@ -97,15 +97,15 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
 
 /* 방 목록 */
 .rlist{display:flex;flex-direction:column;gap:10px}
-.rcard{background:#fff;border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:10px;border:1px solid var(--g100)}.rcard-mine{border:1.5px solid rgba(255,107,53,.4);background:#fffcfb}
+.rcard{background:#fff;border-radius:var(--r);padding:16px 16px;display:flex;align-items:center;gap:10px;border:1px solid var(--g100)}.rcard-mine{border:1.5px solid rgba(255,107,53,.4);background:#fffcfb}
 .rinfo{flex:1;min-width:0;overflow:hidden}
-.rname{font-size:18px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--g900)}
-.rmeta{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:6px}
-.rmeta2{font-size:12px;color:var(--g500);display:flex;align-items:center;gap:5px;margin-top:4px}
+.rname{font-size:20px;font-weight:800;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--g900)}
+.rmeta{font-size:14px;color:var(--g500);display:flex;align-items:center;gap:6px}
+.rmeta2{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:5px;margin-top:5px}
 .ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 .racts{display:flex;gap:6px;flex-shrink:0}
-.btn-join{padding:12px 22px;background:var(--orange);color:#fff;font-family:var(--font);font-size:16px;font-weight:700;border:none;border-radius:10px;cursor:pointer}
+.btn-join{padding:16px 24px;background:var(--orange);color:#fff;font-family:var(--font);font-size:17px;font-weight:700;border:none;border-radius:12px;cursor:pointer}
 .btn-del{padding:7px 10px;background:#FFF0F0;color:var(--red);font-family:var(--font);font-size:13px;font-weight:700;border:1px solid rgba(231,76,60,.2);border-radius:8px;cursor:pointer}
 .empt{text-align:center;padding:32px 20px;color:var(--g500);font-size:14px}
 .empt .em{font-size:36px;display:block;margin-bottom:10px}
@@ -348,7 +348,7 @@ body{font-family:var(--font);background:var(--g50);color:var(--g900);-webkit-fon
       <button class="btn-go" onclick="doLogin()">시작 →</button>
     </div>
     <div class="nhint">최대 8자 · 지도에 마커로 표시됩니다</div>
-    <div class="version-info-inline">v1.660</div>
+    <div class="version-info-inline">v1.661</div>
   </div>
   <div class="nw" id="ls2" style="display:none"></div>
 </div>
@@ -785,11 +785,11 @@ function renderRooms(rooms){
     const roomStatus=r.status||'waiting';
     let statusIcon='';
     if(roomStatus==='riding')
-      statusIcon='<span style="font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>';
+      statusIcon='<span style="font-size:13px;color:var(--green);font-weight:700;background:rgba(46,204,113,.12);padding:3px 9px;border-radius:10px;border:1px solid rgba(46,204,113,.3)">🚴 라이딩 중</span>';
     else if(roomStatus==='paused')
-      statusIcon='<span style="font-size:11px;color:#888;font-weight:700;background:rgba(136,136,136,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(136,136,136,.3)">☕ 휴식 중</span>';
+      statusIcon='<span style="font-size:13px;color:#888;font-weight:700;background:rgba(136,136,136,.12);padding:3px 9px;border-radius:10px;border:1px solid rgba(136,136,136,.3)">☕ 휴식 중</span>';
     else if(roomStatus==='waiting')
-      statusIcon='<span style="font-size:11px;color:var(--orange);font-weight:700;background:rgba(255,107,53,.12);padding:2px 7px;border-radius:10px;border:1px solid rgba(255,107,53,.3)">⏸ 대기 중</span>';
+      statusIcon='<span style="font-size:13px;color:var(--orange);font-weight:700;background:rgba(255,107,53,.12);padding:3px 9px;border-radius:10px;border:1px solid rgba(255,107,53,.3)">⏸ 대기 중</span>';
 
     // ── 2줄: 참가자 · 경과시간
     const elapsedMin=Math.floor((now-(r.createdAt||0))/60000);
@@ -803,10 +803,10 @@ function renderRooms(rooms){
         gpxTotalKm+=hav(r.gpx[i-1].lat,r.gpx[i-1].lng,r.gpx[i].lat,r.gpx[i].lng);
     }
     const gpxShort=(r.gpxName||'GPX 코스').length>20?(r.gpxName||'GPX 코스').substring(0,20)+'...':r.gpxName||'GPX 코스';
-    const row3=hasGpx?`<div style="font-size:12px;color:var(--blue);margin-top:3px;display:flex;align-items:center;gap:4px;overflow:hidden">
+    const row3=hasGpx?`<div style="font-size:13px;color:var(--blue);margin-top:4px;display:flex;align-items:center;gap:4px;overflow:hidden">
       <span style="flex-shrink:0">🗺️</span>
-      <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${gpxShort}</span>
-      <span style="color:var(--g500);flex-shrink:0">(${gpxTotalKm.toFixed(1)}km)</span>
+      <span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${gpxShort}</span>
+      <span style="font-size:13px;color:var(--g500);flex-shrink:0">(${gpxTotalKm.toFixed(1)}km)</span>
     </div>`:'';
 
     // ── 4줄 (GPX 있을 때만): 선두 진행 거리 · 진행률
