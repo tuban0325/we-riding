@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 - WE-RIDING</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --orange:#FF6B35; --od:#E8551F; --dark:#1A1A18; --dark2:#2C2C2A;
+  --g100:#EEEDE9; --g300:#C8C7C0; --g500:#888780; --g900:#1A1A18;
+  --green:#2ECC71; --red:#E74C3C; --blue:#3B82F6; --font:'Pretendard',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:#F5F5F3;color:var(--g900);min-height:100vh}
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
+
+/* ── 로그인 화면 ── */
+#admin-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--dark)}
+.login-box{width:100%;max-width:380px;padding:32px;background:rgba(255,255,255,.05);border-radius:20px;border:1px solid rgba(255,255,255,.1)}
+.login-logo{font-size:40px;text-align:center;margin-bottom:8px}
+.login-title{font-size:20px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--g300);text-align:center;margin-bottom:28px}
+.login-field{margin-bottom:14px}
+.login-label{font-size:12px;color:var(--g300);margin-bottom:6px;display:block;font-weight:600}
+.login-input{width:100%;padding:13px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:14px;font-family:var(--font)}
+.login-input::placeholder{color:rgba(255,255,255,.35)}
+.login-btn{width:100%;padding:14px;background:var(--orange);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;font-family:var(--font)}
+.login-btn:active{background:var(--od)}
+.login-err{color:#FF6B6B;font-size:12px;text-align:center;margin-top:10px;display:none}
+
+/* ── 관리자 메인 레이아웃 ── */
+#admin-main{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--dark);flex-shrink:0;padding:20px 0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto}
+.sidebar-logo{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:12px}
+.sidebar-logo-t{font-size:16px;font-weight:800;color:#fff}
+.sidebar-logo-s{font-size:11px;color:var(--g300);margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;color:var(--g300);font-size:14px;font-weight:600;cursor:pointer;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.04)}
+.nav-item.active{background:rgba(255,107,53,.1);color:#fff;border-left-color:var(--orange)}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.nav-divider{height:1px;background:rgba(255,255,255,.08);margin:12px 20px}
+.nav-section-t{padding:8px 20px;font-size:10px;color:var(--g500);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+.main-content{flex:1;margin-left:220px;padding:24px 28px;max-width:1200px}
+.content-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.content-title{font-size:22px;font-weight:800}
+.content-sub{font-size:13px;color:var(--g500);margin-top:2px}
+.admin-info{display:flex;align-items:center;gap:10px}
+.admin-badge{background:var(--orange);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
+.btn-logout-admin{background:var(--red);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)}
+
+/* ── 통계 카드 ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:#fff;border-radius:14px;padding:20px;border:1px solid var(--g100)}
+.stat-icon{font-size:24px;margin-bottom:10px}
+.stat-val{font-size:28px;font-weight:800;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--g500)}
+.stat-trend{font-size:11px;margin-top:6px;font-weight:600}
+.stat-trend.up{color:var(--green)}
+.stat-trend.down{color:var(--red)}
+
+/* ── 카드 패널 ── */
+.panel{background:#fff;border-radius:14px;padding:20px;border:1px solid var(--g100);margin-bottom:20px}
+.panel-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+
+/* ── 테이블 ── */
+.table{width:100%;border-collapse:collapse}
+.table th{text-align:left;font-size:11px;color:var(--g500);font-weight:700;text-transform:uppercase;padding:10px 12px;border-bottom:2px solid var(--g100)}
+.table td{padding:12px;font-size:13px;border-bottom:1px solid var(--g100)}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover{background:#FAFAF8}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge.green{background:rgba(46,204,113,.12);color:var(--green)}
+.badge.orange{background:rgba(255,107,53,.12);color:var(--orange)}
+.badge.gray{background:rgba(136,136,136,.12);color:#888}
+.badge.red{background:rgba(231,76,60,.12);color:var(--red)}
+.btn-sm{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
+.btn-sm.danger{background:#FFF0F0;color:var(--red);border:1px solid rgba(231,76,60,.2)}
+.btn-sm.primary{background:var(--orange);color:#fff}
+.btn-sm.gray{background:var(--g100);color:var(--g500)}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--g500)}
+.empty-state-icon{font-size:40px;margin-bottom:12px}
+
+/* ── 모달 ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--g100);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--g500)}
+.modal-body{padding:20px}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--g100);display:flex;gap:8px;justify-content:flex-end}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--g500);margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 12px;border:1.5px solid var(--g100);border-radius:8px;font-size:14px;font-family:var(--font)}
+.form-select{width:100%;padding:10px 12px;border:1.5px solid var(--g100);border-radius:8px;font-size:14px;font-family:var(--font);background:#fff}
+.btn{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
+.btn.primary{background:var(--orange);color:#fff}
+.btn.gray{background:var(--g100);color:var(--g900)}
+
+/* ── 모바일 대응 ── */
+@media (max-width:768px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s;z-index:500;width:240px}
+  .sidebar.open{transform:translateX(0)}
+  .main-content{margin-left:0;padding:16px}
+  .mobile-menu-btn{display:flex!important}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .table{font-size:12px}
+  .table th,.table td{padding:8px 6px}
+}
+.mobile-menu-btn{display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--dark);border:none;border-radius:8px;color:#fff;font-size:18px;cursor:pointer;margin-bottom:14px}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:499}
+.sidebar-overlay.show{display:block}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:2000;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.toast.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- ══ 관리자 로그인 ══ -->
+<div class="screen active" id="admin-login">
+  <div class="login-box">
+    <div class="login-logo">🔐</div>
+    <div class="login-title">관리자 로그인</div>
+    <div class="login-sub">WE-RIDING 관리 시스템</div>
+    <div class="login-field">
+      <label class="login-label">아이디</label>
+      <input class="login-input" id="admin-id" type="text" placeholder="관리자 아이디" autocomplete="off">
+    </div>
+    <div class="login-field">
+      <label class="login-label">비밀번호</label>
+      <input class="login-input" id="admin-pw" type="password" placeholder="비밀번호" autocomplete="off">
+    </div>
+    <button class="login-btn" onclick="adminLogin()">로그인</button>
+    <div class="login-err" id="login-err">아이디 또는 비밀번호가 올바르지 않습니다</div>
+  </div>
+</div>
+
+<!-- ══ 관리자 메인 ══ -->
+<div class="screen" id="admin-main">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar(false)"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-t">🚴 수성철인클럽</div>
+      <div class="sidebar-logo-s">관리자 시스템</div>
+    </div>
+
+    <div class="nav-section-t">대시보드</div>
+    <div class="nav-item active" data-page="dashboard" onclick="navTo('dashboard')">
+      <span class="nav-icon">📊</span> 통계 대시보드
+    </div>
+
+    <div class="nav-section-t">라이딩 관리</div>
+    <div class="nav-item" data-page="rooms" onclick="navTo('rooms')">
+      <span class="nav-icon">🚴</span> 진행 중인 라이딩
+    </div>
+    <div class="nav-item" data-page="map" onclick="navTo('map')">
+      <span class="nav-icon">🗺️</span> 실시간 지도
+    </div>
+    <div class="nav-item" data-page="history" onclick="navTo('history')">
+      <span class="nav-icon">📜</span> 라이딩 이력
+    </div>
+
+    <div class="nav-section-t">사용자 관리</div>
+    <div class="nav-item" data-page="users" onclick="navTo('users')">
+      <span class="nav-icon">👥</span> 회원 관리
+    </div>
+    <div class="nav-item" data-page="invites" onclick="navTo('invites')">
+      <span class="nav-icon">🎟️</span> 초대코드 이력
+    </div>
+
+    <div class="nav-section-t">시스템</div>
+    <div class="nav-item" data-page="admins" onclick="navTo('admins')">
+      <span class="nav-icon">🔑</span> 관리자 계정
+    </div>
+    <div class="nav-item" data-page="settings" onclick="navTo('settings')">
+      <span class="nav-icon">⚙️</span> 설정
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-item" onclick="adminLogout()">
+      <span class="nav-icon">🚪</span> 로그아웃
+    </div>
+  </div>
+
+  <div class="main-content">
+    <button class="mobile-menu-btn" onclick="toggleSidebar(true)">☰</button>
+
+    <!-- 페이지별 컨텐츠가 여기 동적으로 렌더링됨 -->
+    <div id="page-content"></div>
+  </div>
+</div>
+
+<!-- ══ 관리자 추가/수정 모달 ══ -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="admin-modal-title">서브 관리자 추가</div>
+      <button class="modal-close" onclick="closeAdminModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">아이디</label>
+        <input class="form-input" id="m-admin-id" placeholder="영문/숫자 4자 이상">
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input class="form-input" id="m-admin-pw" type="password" placeholder="6자 이상">
+      </div>
+      <div class="form-group">
+        <label class="form-label">이름</label>
+        <input class="form-input" id="m-admin-name" placeholder="표시될 이름">
+      </div>
+      <div class="form-group">
+        <label class="form-label">권한</label>
+        <select class="form-select" id="m-admin-role">
+          <option value="sub">서브 관리자</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn gray" onclick="closeAdminModal()">취소</button>
+      <button class="btn primary" onclick="saveAdmin()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, remove, update, push, child } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+const FB_CONFIG = {
+  apiKey: "AIzaSyCMG8XfoKA2xhKvAfvU769Hg8IzE6wYOgI",
+  authDomain: "we-riding.firebaseapp.com",
+  databaseURL: "https://we-riding-default-rtdb.firebaseio.com",
+  projectId: "we-riding",
+  storageBucket: "we-riding.appspot.com",
+  messagingSenderId: "612289069537",
+  appId: "1:612289069537:web:f17ef1ea1b3f86985492a0"
+};
+
+const app = initializeApp(FB_CONFIG);
+const db = getDatabase(app);
+window._fb = { ref, set, get, onValue, remove, update, push, child };
+
+// ── 전역 상태
+const S = { admin: null, currentPage: 'dashboard', roomsListener: null };
+
+// ── 유틸
+const $ = id => document.getElementById(id);
+function toast(msg, ms=2500){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTmr);
+  window._toastTmr = setTimeout(()=>t.classList.remove('show'), ms);
+}
+function screen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+// 간단한 해시 (실제 운영시 더 강력한 방식 권장, 여기선 클라이언트 데모 수준)
+async function simpleHash(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── 초기 슈퍼관리자 시드 (최초 1회, 계정 없으면 자동 생성)
+async function seedSuperAdmin(){
+  const snap = await get(ref(db,'admins'));
+  if(snap.exists()) return;
+  const pwHash = await simpleHash('admin1234'); // 최초 비밀번호 - 로그인 후 반드시 변경 권장
+  await set(ref(db,'admins/super_default'), {
+    username:'admin', passwordHash:pwHash, name:'최고관리자',
+    role:'super', createdAt:Date.now(), createdBy:'system'
+  });
+}
+
+// ── 관리자 로그인
+window.adminLogin = async function(){
+  const id = $('admin-id').value.trim();
+  const pw = $('admin-pw').value;
+  if(!id||!pw){ toast('아이디와 비밀번호를 입력해주세요'); return; }
+
+  try{
+    await seedSuperAdmin();
+    const snap = await get(ref(db,'admins'));
+    const admins = snap.val() || {};
+    const pwHash = await simpleHash(pw);
+    let found = null, foundId = null;
+    for(const [aid, a] of Object.entries(admins)){
+      if(a.username===id && a.passwordHash===pwHash){ found=a; foundId=aid; break; }
+    }
+    if(!found){
+      $('login-err').style.display='block';
+      return;
+    }
+    $('login-err').style.display='none';
+    S.admin = { id:foundId, ...found };
+    sessionStorage.setItem('adminSession', JSON.stringify(S.admin));
+    await update(ref(db,`admins/${foundId}`), { lastLogin: Date.now() });
+    enterAdmin();
+  }catch(e){
+    console.error(e);
+    toast('로그인 중 오류가 발생했어요');
+  }
+};
+
+$('admin-pw').addEventListener('keydown', e=>{ if(e.key==='Enter') window.adminLogin(); });
+
+window.adminLogout = function(){
+  if(!confirm('로그아웃 하시겠습니까?')) return;
+  sessionStorage.removeItem('adminSession');
+  S.admin = null;
+  if(S.roomsListener){ S.roomsListener(); S.roomsListener=null; }
+  screen('admin-login');
+};
+
+function enterAdmin(){
+  screen('admin-main');
+  navTo('dashboard');
+}
+
+// ── 사이드바 모바일 토글
+window.toggleSidebar = function(open){
+  $('sidebar').classList.toggle('open', open);
+  $('sidebar-overlay').classList.toggle('show', open);
+};
+
+// ── 페이지 네비게이션
+window.navTo = function(page){
+  S.currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if(navEl) navEl.classList.add('active');
+  toggleSidebar(false);
+  renderPage(page);
+};
+
+// ── 페이지 렌더링 라우터
+function renderPage(page){
+  const el = $('page-content');
+  switch(page){
+    case 'dashboard': renderDashboard(el); break;
+    case 'rooms': renderRoomsPage(el); break;
+    case 'map': renderMapPage(el); break;
+    case 'history': renderHistoryPage(el); break;
+    case 'users': renderUsersPage(el); break;
+    case 'invites': renderInvitesPage(el); break;
+    case 'admins': renderAdminsPage(el); break;
+    case 'settings': renderSettingsPage(el); break;
+    default: el.innerHTML = '<div class="empty-state">페이지를 찾을 수 없어요</div>';
+  }
+}
+
+// ── 1. 통계 대시보드
+async function renderDashboard(el){
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">통계 대시보드</div>
+        <div class="content-sub">전체 현황을 한눈에 확인하세요</div>
+      </div>
+      <div class="admin-info">
+        <span class="admin-badge">${S.admin.role==='super'?'최고관리자':'서브관리자'}</span>
+      </div>
+    </div>
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-val">-</div><div class="stat-label">불러오는 중...</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">진행 중인 라이딩</div>
+      <div id="dash-rooms-mini"><div class="empty-state">불러오는 중...</div></div>
+    </div>
+  `;
+
+  try{
+    const roomsSnap = await get(ref(db,'rooms'));
+    const rooms = roomsSnap.val() || {};
+    const roomList = Object.values(rooms);
+    const activeRooms = roomList.filter(r=>r.status!=='ended');
+    const endedRooms = roomList.filter(r=>r.status==='ended');
+    const totalMembers = activeRooms.reduce((sum,r)=>sum+Object.keys(r.members||{}).filter(k=>r.members[k].active!==false).length,0);
+    const activeRiding = roomList.filter(r=>r.status==='riding').length;
+    const totalGpx = roomList.filter(r=>r.gpx&&r.gpx.length>0).length;
+
+    $('stat-grid').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon">🚴</div>
+        <div class="stat-val">${activeRooms.length}</div>
+        <div class="stat-label">활성 방 (전체 ${roomList.length}, 종료 ${endedRooms.length})</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-val">${totalMembers}</div>
+        <div class="stat-label">현재 접속 중인 인원</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏃</div>
+        <div class="stat-val">${activeRiding}</div>
+        <div class="stat-label">라이딩 중인 방</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🗺️</div>
+        <div class="stat-val">${totalGpx}</div>
+        <div class="stat-label">GPX 코스 등록 방</div>
+      </div>
+    `;
+
+    const activeOnlyList = activeRooms;
+    if(activeOnlyList.length===0){
+      $('dash-rooms-mini').innerHTML = `<div class="empty-state"><div class="empty-state-icon">🚴</div>활성 라이딩이 없어요</div>`;
+    } else {
+      $('dash-rooms-mini').innerHTML = `
+        <table class="table">
+          <thead><tr><th>방 이름</th><th>인원</th><th>상태</th><th>경과</th></tr></thead>
+          <tbody>
+            ${activeOnlyList.map(r=>{
+              const cnt = Object.keys(r.members||{}).length;
+              const elapsed = Math.floor((Date.now()-(r.createdAt||0))/60000);
+              const statusMap = {waiting:['대기중','orange'],riding:['라이딩중','green'],paused:['휴식중','gray']};
+              const [label,cls] = statusMap[r.status]||['대기중','orange'];
+              return `<tr>
+                <td>${r.name}</td>
+                <td>${cnt}명</td>
+                <td><span class="badge ${cls}">${label}</span></td>
+                <td>${elapsed}분</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+  }catch(e){
+    console.error(e);
+    $('stat-grid').innerHTML = `<div class="empty-state">데이터를 불러올 수 없어요</div>`;
+  }
+}
+
+// ── 2. 진행 중인 라이딩 관리
+async function renderRoomsPage(el){
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">진행 중인 라이딩</div>
+        <div class="content-sub">실시간으로 라이딩 방을 관리합니다</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div id="rooms-table"><div class="empty-state">불러오는 중...</div></div>
+    </div>
+  `;
+
+  if(S.roomsListener) S.roomsListener();
+  S.roomsListener = onValue(ref(db,'rooms'), snap=>{
+    const rooms = snap.val() || {};
+    const list = Object.entries(rooms).map(([id,r])=>({...r,id}));
+    const tableEl = $('rooms-table');
+    if(!tableEl) return; // 페이지 전환된 경우 무시
+
+    if(list.length===0){
+      tableEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🚴</div>진행 중인 라이딩이 없어요</div>`;
+      return;
+    }
+    tableEl.innerHTML = `
+      <table class="table">
+        <thead><tr><th>방 이름</th><th>방장</th><th>인원</th><th>GPX</th><th>상태</th><th>생성</th><th>관리</th></tr></thead>
+        <tbody>
+          ${list.map(r=>{
+            const cnt = Object.keys(r.members||{}).length;
+            const owner = r.members?.[r.ownerId]?.name || '-';
+            const hasGpx = r.gpx&&r.gpx.length>0;
+            const statusMap = {waiting:['대기중','orange'],riding:['라이딩중','green'],paused:['휴식중','gray'],ended:['종료','red']};
+            const [label,cls] = statusMap[r.status]||['대기중','orange'];
+            const ago = Math.floor((Date.now()-(r.createdAt||0))/60000);
+            return `<tr>
+              <td><b>${r.name}</b></td>
+              <td>${owner}</td>
+              <td>${cnt}명</td>
+              <td>${hasGpx?'✅':'-'}</td>
+              <td><span class="badge ${cls}">${label}</span></td>
+              <td>${ago}분 전</td>
+              <td>
+                <button class="btn-sm danger" onclick="adminDeleteRoom('${r.id}')">라이딩 종료</button>
+                <button class="btn-sm gray" onclick="adminHardDeleteRoom('${r.id}')" title="방 자체를 완전히 삭제 (ownedRoomId도 초기화)">완전삭제</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  });
+}
+
+window.adminDeleteRoom = async function(roomId){
+  if(!confirm('이 라이딩을 강제 종료하시겠습니까?\n(방은 삭제되지 않고 보존되며, 회원은 나중에 다시 시작할 수 있어요)')) return;
+  try{
+    await set(ref(db,`rooms/${roomId}/status`), 'ended');
+    toast('✅ 라이딩이 종료됐어요 (방은 보존됨)');
+  }catch(e){ toast('❌ 종료 실패'); }
+};
+
+window.adminHardDeleteRoom = async function(roomId){
+  if(!confirm('이 방을 완전히 삭제하시겠습니까?\n방장의 보유 방 정보도 함께 초기화됩니다. 이 작업은 되돌릴 수 없습니다.')) return;
+  try{
+    const snap = await get(ref(db,`rooms/${roomId}`));
+    const ownerId = snap.exists() ? snap.val().ownerId : null;
+    await remove(ref(db,`rooms/${roomId}`));
+    if(ownerId){
+      await set(ref(db,`users/${ownerId}/ownedRoomId`), null);
+      await set(ref(db,`users/${ownerId}/currentRoomId`), null);
+    }
+    toast('✅ 방이 완전히 삭제됐어요');
+  }catch(e){ toast('❌ 삭제 실패'); console.error(e); }
+};
+
+// ── 3. 실시간 지도 (placeholder - 추후 확장)
+function renderMapPage(el){
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">실시간 지도</div>
+        <div class="content-sub">전체 라이딩 위치를 지도에서 확인합니다</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="empty-state">
+        <div class="empty-state-icon">🗺️</div>
+        준비 중인 기능입니다.<br>
+        <span style="font-size:12px">전체 라이딩 방의 실시간 위치를 한 지도에서 모니터링할 수 있도록 추후 추가될 예정입니다.</span>
+      </div>
+    </div>
+  `;
+}
+
+// ── 4. 라이딩 이력 (placeholder - 추후 확장, DB 구조 필요)
+function renderHistoryPage(el){
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">라이딩 이력</div>
+        <div class="content-sub">종료된 라이딩 기록을 확인합니다</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="empty-state">
+        <div class="empty-state-icon">📜</div>
+        준비 중인 기능입니다.<br>
+        <span style="font-size:12px">방이 종료될 때 기록을 별도 저장하는 기능이 추가되면 여기서 확인할 수 있습니다.</span>
+      </div>
+    </div>
+  `;
+}
+
+// ── 5. 회원 목록 (V2: 카카오 가입 회원 기준)
+async function renderUsersPage(el){
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">회원 목록</div>
+        <div class="content-sub">카카오 간편가입 회원 관리 (1인 1방 정책)</div>
+      </div>
+    </div>
+    <div class="stat-grid" id="user-stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-val">-</div><div class="stat-label">불러오는 중...</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">
+        <span>전체 회원</span>
+        <button class="btn-sm gray" onclick="renderUsersPage(document.getElementById('page-content'))">🔄 새로고침</button>
+      </div>
+      <div id="users-table"><div class="empty-state">불러오는 중...</div></div>
+    </div>
+  `;
+
+  try{
+    const [usersSnap, roomsSnap] = await Promise.all([
+      get(ref(db,'users')), get(ref(db,'rooms'))
+    ]);
+    const users = usersSnap.val() || {};
+    const rooms = roomsSnap.val() || {};
+    const userList = Object.entries(users).map(([kid,u])=>({...u, kakaoId:kid}));
+
+    // 1인1방 정합성 체크: ownedRoomId가 가리키는 방이 실제로 존재하고 ownerId가 본인인지
+    let violations = 0;
+    userList.forEach(u=>{
+      if(u.ownedRoomId){
+        const room = rooms[u.ownedRoomId];
+        if(!room || room.ownerId !== u.kakaoId) violations++;
+      }
+    });
+
+    $('user-stat-grid').innerHTML = `
+      <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val">${userList.length}</div><div class="stat-label">전체 가입 회원</div></div>
+      <div class="stat-card"><div class="stat-icon">🚴</div><div class="stat-val">${userList.filter(u=>u.ownedRoomId).length}</div><div class="stat-label">방 보유 회원</div></div>
+      <div class="stat-card"><div class="stat-icon">${violations>0?'⚠️':'✅'}</div><div class="stat-val">${violations}</div><div class="stat-label">1인1방 정합성 오류</div></div>
+    `;
+
+    const tableEl = $('users-table');
+    if(userList.length===0){
+      tableEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div>가입한 회원이 없어요</div>`;
+      return;
+    }
+    userList.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    tableEl.innerHTML = `
+      <table class="table">
+        <thead><tr><th>닉네임</th><th>카카오ID</th><th>보유 방</th><th>현재 위치</th><th>가입일</th><th>최근 로그인</th><th>관리</th></tr></thead>
+        <tbody>
+          ${userList.map(u=>{
+            const room = u.ownedRoomId ? rooms[u.ownedRoomId] : null;
+            const roomBadge = room
+              ? `<span class="badge ${room.ownerId===u.kakaoId?'green':'red'}">${room.name}${room.ownerId!==u.kakaoId?' ⚠️':''}</span>`
+              : `<span class="badge gray">없음</span>`;
+            const curRoom = u.currentRoomId ? rooms[u.currentRoomId] : null;
+            let curBadge;
+            if(!curRoom) curBadge = `<span class="badge gray">-</span>`;
+            else if(curRoom.ownerId===u.kakaoId) curBadge = `<span class="badge orange">내 방</span>`;
+            else curBadge = `<span class="badge gray">참여중: ${curRoom.name}</span>`;
+            const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ko-KR') : '-';
+            const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+            return `<tr>
+              <td><b>${u.nickname||'-'}</b></td>
+              <td style="font-size:10px;color:var(--g500)">${u.kakaoId}</td>
+              <td>${roomBadge}</td>
+              <td>${curBadge}</td>
+              <td>${created}</td>
+              <td>${lastLogin}</td>
+              <td>
+                ${u.ownedRoomId?`<button class="btn-sm danger" onclick="adminResetUserRoom('${u.kakaoId}','${u.ownedRoomId}')">방 초기화</button>`:''}
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }catch(e){
+    console.error(e);
+    toast('회원 목록을 불러올 수 없어요');
+  }
+}
+
+// ── 회원의 ownedRoomId 강제 초기화 (1인1방 정합성 오류 복구용)
+window.adminResetUserRoom = async function(kakaoId, roomId){
+  if(!confirm(`이 회원의 보유 방 정보를 초기화할까요?\n(방 자체는 삭제되지 않습니다)`)) return;
+  try{
+    await set(ref(db,`users/${kakaoId}/ownedRoomId`), null);
+    await set(ref(db,`users/${kakaoId}/currentRoomId`), null);
+    toast('✅ 초기화됐어요');
+    renderUsersPage($('page-content'));
+  }catch(e){ toast('❌ 초기화 실패'); }
+};
+
+
+
+// ── 초대코드 이력 (rooms/{id}/inviteCode 수집)
+async function renderInvitesPage(el){
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">초대코드 이력</div>
+        <div class="content-sub">발급된 1회용 초대코드 현황</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div id="invites-table"><div class="empty-state">불러오는 중...</div></div>
+    </div>
+  `;
+  try{
+    const [roomsSnap, usersSnap] = await Promise.all([
+      get(ref(db,'rooms')), get(ref(db,'users'))
+    ]);
+    const rooms = roomsSnap.val() || {};
+    const users = usersSnap.val() || {};
+    const invites = Object.entries(rooms)
+      .filter(([,r])=>r.inviteCode)
+      .map(([rid,r])=>({...r.inviteCode, roomId:rid, roomName:r.name}));
+
+    const tableEl = $('invites-table');
+    if(invites.length===0){
+      tableEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎟️</div>발급된 초대코드가 없어요</div>`;
+      return;
+    }
+    invites.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    tableEl.innerHTML = `
+      <table class="table">
+        <thead><tr><th>코드</th><th>방 이름</th><th>발급자</th><th>상태</th><th>사용자</th><th>발급일</th></tr></thead>
+        <tbody>
+          ${invites.map(inv=>{
+            const creator = users[inv.createdBy]?.nickname || inv.createdBy;
+            const usedByName = inv.usedBy ? (users[inv.usedBy]?.nickname || inv.usedBy) : '-';
+            const expired = inv.expiresAt < Date.now();
+            const statusBadge = inv.used
+              ? '<span class="badge gray">사용됨</span>'
+              : expired ? '<span class="badge red">만료됨</span>' : '<span class="badge green">사용 가능</span>';
+            const created = inv.createdAt ? new Date(inv.createdAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+            return `<tr>
+              <td style="font-family:monospace;font-weight:700">${inv.code}</td>
+              <td>${inv.roomName}</td>
+              <td>${creator}</td>
+              <td>${statusBadge}</td>
+              <td>${usedByName}</td>
+              <td>${created}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }catch(e){
+    console.error(e);
+    toast('초대코드 이력을 불러올 수 없어요');
+  }
+}
+
+
+async function renderAdminsPage(el){
+  const isSuper = S.admin.role==='super';
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">관리자 계정</div>
+        <div class="content-sub">${isSuper?'서브 관리자를 추가하고 관리합니다':'관리자 목록을 확인합니다'}</div>
+      </div>
+      ${isSuper?`<button class="btn primary" onclick="openAdminModal()">+ 서브 관리자 추가</button>`:''}
+    </div>
+    <div class="panel">
+      <div id="admins-table"><div class="empty-state">불러오는 중...</div></div>
+    </div>
+  `;
+
+  try{
+    const snap = await get(ref(db,'admins'));
+    const admins = snap.val() || {};
+    const list = Object.entries(admins).map(([id,a])=>({...a,id}));
+    const tableEl = $('admins-table');
+    tableEl.innerHTML = `
+      <table class="table">
+        <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>최근 로그인</th>${isSuper?'<th>관리</th>':''}</tr></thead>
+        <tbody>
+          ${list.map(a=>{
+            const lastLogin = a.lastLogin?new Date(a.lastLogin).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
+            return `<tr>
+              <td><b>${a.username}</b></td>
+              <td>${a.name||'-'}</td>
+              <td><span class="badge ${a.role==='super'?'orange':'gray'}">${a.role==='super'?'최고관리자':'서브관리자'}</span></td>
+              <td>${lastLogin}</td>
+              ${isSuper?`<td>${a.role!=='super'?`<button class="btn-sm danger" onclick="deleteAdmin('${a.id}')">삭제</button>`:''}</td>`:''}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }catch(e){ console.error(e); }
+}
+
+window.openAdminModal = function(){
+  $('m-admin-id').value=''; $('m-admin-pw').value=''; $('m-admin-name').value='';
+  $('admin-modal').classList.add('show');
+};
+window.closeAdminModal = function(){
+  $('admin-modal').classList.remove('show');
+};
+window.saveAdmin = async function(){
+  const username = $('m-admin-id').value.trim();
+  const pw = $('m-admin-pw').value;
+  const name = $('m-admin-name').value.trim();
+  if(!username||username.length<4){ toast('아이디는 4자 이상이어야 해요'); return; }
+  if(!pw||pw.length<6){ toast('비밀번호는 6자 이상이어야 해요'); return; }
+  if(!name){ toast('이름을 입력해주세요'); return; }
+
+  try{
+    const snap = await get(ref(db,'admins'));
+    const admins = snap.val() || {};
+    if(Object.values(admins).some(a=>a.username===username)){
+      toast('이미 사용 중인 아이디예요'); return;
+    }
+    const newId = 'admin_'+Date.now().toString(36);
+    const pwHash = await simpleHash(pw);
+    await set(ref(db,`admins/${newId}`), {
+      username, passwordHash:pwHash, name, role:'sub',
+      createdAt:Date.now(), createdBy:S.admin.username
+    });
+    toast('✅ 서브 관리자가 추가됐어요');
+    closeAdminModal();
+    renderAdminsPage($('page-content'));
+  }catch(e){ toast('❌ 추가 실패'); console.error(e); }
+};
+window.deleteAdmin = async function(adminId){
+  if(!confirm('이 관리자 계정을 삭제하시겠습니까?')) return;
+  try{
+    await remove(ref(db,`admins/${adminId}`));
+    toast('✅ 삭제됐어요');
+    renderAdminsPage($('page-content'));
+  }catch(e){ toast('❌ 삭제 실패'); }
+};
+
+// ── 7. 설정 (확장 영역)
+function renderSettingsPage(el){
+  el.innerHTML = `
+    <div class="content-header">
+      <div>
+        <div class="content-title">설정</div>
+        <div class="content-sub">시스템 환경설정</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">내 계정 정보</div>
+      <table class="table">
+        <tr><td style="color:var(--g500)">아이디</td><td><b>${S.admin.username}</b></td></tr>
+        <tr><td style="color:var(--g500)">이름</td><td>${S.admin.name||'-'}</td></tr>
+        <tr><td style="color:var(--g500)">권한</td><td><span class="badge orange">${S.admin.role==='super'?'최고관리자':'서브관리자'}</span></td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-title">확장 예정 기능</div>
+      <div style="font-size:13px;color:var(--g500);line-height:1.8">
+        · Firebase 프로젝트 설정 변경<br>
+        · 초대 코드 생성/관리<br>
+        · 카카오 알림톡 연동 설정<br>
+        · 자동 데이터 정리 주기 설정<br>
+        · 공지사항 관리
+      </div>
+    </div>
+  `;
+}
+
+// ── 페이지 로드시 세션 복원
+(function initAdmin(){
+  const saved = sessionStorage.getItem('adminSession');
+  if(saved){
+    try{
+      S.admin = JSON.parse(saved);
+      enterAdmin();
+    }catch(e){ screen('admin-login'); }
+  }
+})();
+</script>
+</body>
+</html>
